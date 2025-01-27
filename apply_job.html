@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply for Job</title>
+</head>
+<body>
+<h1>Apply for Job</h1>
+<form id="apply-form">
+    <input type="hidden" id="jobId">
+    <input type="text" id="firstName" placeholder="First Name" required>
+    <input type="text" id="lastName" placeholder="Last Name" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="file" id="resume" accept="application/pdf" required>
+    <button type="submit">Submit Application</button>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const jobId = urlParams.get('jobId');
+        document.getElementById('jobId').value = jobId;
+    });
+
+    document.getElementById('apply-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const jobId = document.getElementById('jobId').value;
+        const firstName = document.getElementById('firstName').value;
+        const lastName = document.getElementById('lastName').value;
+        const email = document.getElementById('email').value;
+        const resumeFile = document.getElementById('resume').files[0];
+
+        const reader = new FileReader();
+        reader.onload = async () => {
+            const resume = reader.result;
+
+            try {
+                const response = await fetch(`/apply/${jobId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firstName, lastName, email, resume }),
+                });
+
+                if (response.ok) {
+                    alert('Application submitted successfully!');
+                    window.location.href = '/job_search_dashboard.html';
+                } else {
+                    throw new Error('Failed to submit application');
+                }
+            } catch (err) {
+                console.error('Error:', err);
+            }
+        };
+
+        reader.readAsDataURL(resumeFile);
+    });
+</script>
+</body>
+</html>

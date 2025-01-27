@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internship Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script defer src="internship_tracker.js"></script>
+    <style>
+        /* Add relevant styling here */
+    </style>
+</head>
+<body>
+<header>
+    <h1>Internship Tracker</h1>
+</header>
+<main>
+    <section>
+        <input type="text" id="companyName" placeholder="Enter Company Name">
+        <input type="text" id="internshipTitle" placeholder="Enter Internship Title">
+        <label for="applicationDate">Enter Date Applied</label>
+        <input type="date" id="applicationDate">
+        <label for="expectedToHearBack">Enter Expected to Hear Back By</label>
+        <input type="month" id="expectedToHearBack">
+        <button id="addInternshipButton">Add Internship</button>
+    </section>
+    <section>
+        <table id="internshipTable">
+            <thead>
+            <tr>
+                <th>Company Name</th>
+                <th>Internship Title</th>
+                <th>Date Applied</th>
+                <th>Expected to Hear Back By</th>
+                <th>Offer Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- Internship entries will be added here -->
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>

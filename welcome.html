@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Compass - Welcome</title>
+    <script src="navigation.js" defer></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom right, #4facfe, #ffef96);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333333;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .roles {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .role-box {
+            width: 200px;
+            height: 250px;
+            background: #ffffff;
+            border: 1px solid #dddddd;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .role-box:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .role-box img {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
+
+        .role-box p {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .logo {
+            width: 300px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <img src="https://github.com/BarberS-hop-App99/Fade-Finder/blob/main/sdr.png?raw=true" alt="Career Compass Logo" class="logo">
+    <h1>Please select your account type</h1>
+    <div class="roles">
+        <div class="role-box" id="studentBox">
+            <img src="https://cdn-icons-png.flaticon.com/512/16059/16059827.png" alt="Student Icon">
+            <p>Student</p>
+        </div>
+        <div class="role-box" id="recruiterBox">
+            <img src="https://cdn-icons-png.flaticon.com/512/10051/10051265.png" alt="Recruiter Icon">
+            <p>Recruiter</p>
+        </div>
+        <div class="role-box" id="reccomenderBox">
+            <img src="https://cdn-icons-png.flaticon.com/512/16059/16059828.png" alt="Recommender Icon">
+            <p>Recommender</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>
