@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background-color: #007bff;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+        }
+
+        .tab {
+            margin: 0 1rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            border-bottom: 2px solid #007bff;
+            color: #007bff;
+        }
+
+        .tab-content {
+            flex: 1;
+            display: none;
+            padding: 2rem;
+            background-color: white;
+            overflow-y: auto;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 0.8rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Admin Dashboard</h1>
+    </header>
+
+    <div class="tabs">
+        <div class="tab active" data-tab="students">Students</div>
+        <div class="tab" data-tab="recruiters">Recruiters</div>
+        <div class="tab" data-tab="counselors">Counselors</div>
+    </div>
+
+    <div class="tab-content active" id="students">
+        <h2>Students</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Enrollment Year</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Example data -->
+                <tr>
+                    <td>1</td>
+                    <td>John Doe</td>
+                    <td>john.doe@example.com</td>
+                    <td>2023</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="tab-content" id="recruiters">
+        <h2>Recruiters</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Company</th>
+                    <th>Contact Name</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Example data -->
+                <tr>
+                    <td>1</td>
+                    <td>Tech Corp</td>
+                    <td>Jane Smith</td>
+                    <td>jane.smith@techcorp.com</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="tab-content" id="counselors">
+        <h2>Counselors</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Specialization</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Example data -->
+                <tr>
+                    <td>1</td>
+                    <td>Mark Johnson</td>
+                    <td>mark.johnson@example.com</td>
+                    <td>Career Planning</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Tab switching logic
+        document.addEventListener("DOMContentLoaded", () => {
+            const tabs = document.querySelectorAll(".tab");
+            const tabContents = document.querySelectorAll(".tab-content");
+
+            tabs.forEach(tab => {
+                tab.addEventListener("click", () => {
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove("active"));
+                    tabContents.forEach(tc => tc.classList.remove("active"));
+
+                    // Add active class to the clicked tab and corresponding content
+                    tab.classList.add("active");
+                    document.getElementById(tab.dataset.tab).classList.add("active");
+                });
+            });
+        });
+    </script>
+</body>
+</html>

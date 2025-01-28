@@ -8,90 +8,133 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(to bottom right, #4facfe, #ffef96);
             margin: 0;
             padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            background-color: #f3f2ef;
             color: #333333;
         }
 
+        .top-left-logo {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+
+        .top-left-logo img {
+            width: 150px;
+            height: auto;
+        }
+
         .container {
-            text-align: center;
-            max-width: 800px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
             width: 90%;
         }
 
-        h1 {
-            font-size: 2em;
+        .content {
+            flex: 1;
+            max-width: 50%;
+        }
+
+        .content h1 {
+            font-size: 2.5em;
+            font-weight: 600;
             margin-bottom: 20px;
         }
 
-        .roles {
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
-        .role-box {
-            width: 200px;
-            height: 250px;
-            background: #ffffff;
-            border: 1px solid #dddddd;
-            border-radius: 10px;
+        .buttons {
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .button {
+            display: flex;
             align-items: center;
-            cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .role-box:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        .role-box img {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 15px;
-        }
-
-        .role-box p {
-            font-size: 1.1em;
+            justify-content: center;
+            padding: 15px;
+            border: 1px solid #dddddd;
+            border-radius: 25px;
+            background-color: #ffffff;
+            font-size: 1em;
             font-weight: bold;
-            margin: 0;
+            color: #333333;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #f0f0f0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .button img {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
         }
 
         .logo {
-            width: 300px;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo img {
+            max-width: 100%;
             height: auto;
-            margin-bottom: 20px;
+        }
+
+        footer {
+            font-size: 0.9em;
+            text-align: center;
+            margin-top: 20px;
+            color: #666666;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <img src="https://github.com/BarberS-hop-App99/Fade-Finder/blob/main/sdr.png?raw=true" alt="Career Compass Logo" class="logo">
-    <h1>Please select your account type</h1>
-    <div class="roles">
-        <div class="role-box" id="studentBox">
-            <img src="https://cdn-icons-png.flaticon.com/512/16059/16059827.png" alt="Student Icon">
-            <p>Student</p>
+    <div class="top-left-logo">
+        <img src="https://github.com/BarberS-hop-App99/Fade-Finder/blob/main/sdr.png?raw=true" alt="Small Logo">
+    </div>
+    <div class="container">
+        <div class="content">
+            <h1>Welcome to your professional community</h1>
+            <div class="buttons">
+                <a href="#" class="button" id="studentBox">
+                    <img src="https://cdn-icons-png.flaticon.com/512/16059/16059827.png" alt="Student Icon">
+                    Student
+                </a>
+                <a href="#" class="button" id="recruiterBox">
+                    <img src="https://cdn-icons-png.flaticon.com/512/10051/10051265.png" alt="Recruiter Icon">
+                    Recruiter
+                </a>
+                <a href="#" class="button">
+                    Counselor
+                </a>
+                <a href="#" class="button" id="adminBox">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3565/3565418.png" alt="Admin Icon">
+                    Admin
+                </a>
+                
+            </div>
+            <footer>
+                By clicking Continue, you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
+            </footer>
         </div>
-        <div class="role-box" id="recruiterBox">
-            <img src="https://cdn-icons-png.flaticon.com/512/10051/10051265.png" alt="Recruiter Icon">
-            <p>Recruiter</p>
-        </div>
-        <div class="role-box" id="reccomenderBox">
-            <img src="https://cdn-icons-png.flaticon.com/512/16059/16059828.png" alt="Recommender Icon">
-            <p>Recommender</p>
+        <div class="logo">
+            <img src="https://cdnsm5-ss18.sharpschool.com/UserFiles/Servers/Server_27836405/Image/%20students/Internship%20Course/internship-image.png" alt="Career Compass Logo">
         </div>
     </div>
-</div>
 </body>
 </html>

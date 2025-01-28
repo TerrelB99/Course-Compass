@@ -10,6 +10,14 @@ window.addEventListener('DOMContentLoaded', () => {
     const recruiterBox = document.getElementById('recruiterBox');
     const studentBox = document.getElementById('studentBox');
     const reccomenderBox = document.getElementById('reccomenderBox');
+    const adminBox = document.getElementById("adminBox");
+
+    if (adminBox) {
+        adminBox.addEventListener("click", () => {
+            navigateTo("admin.html");
+        });
+    }
+
 
     if (studentBox) {
         studentBox.addEventListener('click', () => {
