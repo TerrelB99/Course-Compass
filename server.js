@@ -156,13 +156,15 @@ app.get('/jobs/:jobId/applicants', async (req, res) => {
         }
 
         const applicantsWithResumes = job.applicants.map(applicant => ({
-            ...applicant,
-            resume: `data:application/pdf;base64,${applicant.resume}`,
+            firstName: applicant.firstName,
+            lastName: applicant.lastName,
+            email: applicant.email,
+            resume: `data:application/pdf;base64,${applicant.resume}` // If resumes are Base64 encoded
         }));
 
         res.status(200).json(applicantsWithResumes);
-    } catch (err) {
-        res.status(500).json({ message: 'Internal Server Error', error: err.message });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching applicants', error: error.message });
     }
 });
 
@@ -196,6 +198,48 @@ app.get('/students', async (req, res) => {
     }
 });
 
+
+// Delete an applicant from a job permanently
+app.delete('/jobs/:jobId/applicants/:applicantId', async (req, res) => {
+    const { jobId, applicantId } = req.params;
+
+    try {
+        const job = await Job.findById(jobId);
+        if (!job) {
+            return res.status(404).json({ message: "Job not found" });
+        }
+
+        // Remove applicant permanently
+        job.applicants = job.applicants.filter(applicant => applicant._id.toString() !== applicantId);
+        await job.save();
+
+        res.status(200).json({ message: "Application permanently deleted" });
+    } catch (error) {
+        res.status(500).json({ message: "Error deleting application", error: error.message });
+    }
+});
+
+
+// Delete a Job
+app.delete('/jobs/:jobId', async (req, res) => {
+    const { jobId } = req.params;
+
+    try {
+        const job = await Job.findByIdAndDelete(jobId);
+        if (!job) {
+            return res.status(404).json({ message: 'Job not found' });
+        }
+
+        await Student.updateMany(
+            { appliedJobs: { $elemMatch: { jobId } } },
+            { $pull: { appliedJobs: { jobId } } }
+        );
+
+        res.status(200).json({ message: 'Job and associated applications deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting job', error: error.message });
+    }
+});
 
 // Start server
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
