@@ -1,37 +1,36 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const authForm = document.getElementById("authForm");
-    const errorMessage = document.getElementById("errorMessage");
-
-    authForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("authForm").addEventListener("submit", async function (event) {
+        event.preventDefault();
 
         const username = document.getElementById("username").value.trim();
         const password = document.getElementById("password").value.trim();
 
+        console.log("Sending request:", { username, password });
+
         if (!username || !password) {
-            errorMessage.textContent = "Both fields are required!";
+            document.getElementById("errorMessage").textContent = "Please enter both fields.";
             return;
         }
 
         try {
-            const response = await fetch("http://localhost:3000/student/signin", {
-                method: "POST",
+            const response = await fetch("http://localhost:3000/auth/students/signin", {
+                method: "POST", // Ensure this is a POST request
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({ username, password })
             });
 
+            const data = await response.json();
+            console.log("Response received:", data);
+
             if (response.ok) {
-                const result = await response.json();
-                alert(`Welcome, ${result.student.firstname} ${result.student.lastname}!`);
-                // Redirect to student_navigator.html
-                window.location.href = "student_navigator.html";
+                alert("Login successful!");
+                window.location.href = "/dashboard.html";
             } else {
-                const errorText = await response.json();
-                errorMessage.textContent = errorText.message || "Invalid credentials. Please try again.";
+                document.getElementById("errorMessage").textContent = data.error;
             }
-        } catch (err) {
-            errorMessage.textContent = "Error connecting to the server!";
-            console.error(err);
+        } catch (error) {
+            console.error("Login failed:", error);
+            document.getElementById("errorMessage").textContent = "An error occurred. Please try again.";
         }
     });
 });
