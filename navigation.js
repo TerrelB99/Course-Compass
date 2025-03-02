@@ -12,6 +12,13 @@ window.addEventListener('DOMContentLoaded', () => {
     const reccomenderBox = document.getElementById('reccomenderBox');
     const adminBox = document.getElementById("adminBox");
     const AdminStudentBox = document.getElementById("AdminStudentBox");
+    const AdminRecruiterBox = document.getElementById("AdminRecruiterBox");
+
+    if(AdminRecruiterBox){
+        AdminRecruiterBox.addEventListener("click", () =>{
+            navigateTo("AdminR_dashboard.html");
+        });
+    }
 
     if (AdminStudentBox) {
         AdminStudentBox.addEventListener("click", () => {
