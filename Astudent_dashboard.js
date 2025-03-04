@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (!response.ok) throw new Error("Failed to update student");
 
             alert("Student updated successfully!");
-            fetchStudents(); // Refresh list
+            await fetchStudents(); // Refresh list
         } catch (error) {
             console.error("Error updating student:", error);
         }
