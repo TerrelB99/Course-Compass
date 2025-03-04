@@ -38,7 +38,6 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-
     if (studentBox) {
         studentBox.addEventListener('click', () => {
             navigateTo('signin.html');

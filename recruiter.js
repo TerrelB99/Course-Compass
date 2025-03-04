@@ -1,36 +1,42 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const authForm = document.getElementById("authForm");
-    const errorMessage = document.getElementById("errorMessage");
-
-    authForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("authForm").addEventListener("submit", async function (event) {
+        event.preventDefault();
 
         const username = document.getElementById("username").value.trim();
         const password = document.getElementById("password").value.trim();
 
+        console.log("🔍 Sending recruiter login request:", { username, password });
+
         if (!username || !password) {
-            errorMessage.textContent = "Both fields are required!";
+            document.getElementById("errorMessage").textContent = "Please enter both fields.";
             return;
         }
 
         try {
+            // Send login request to the backend
             const response = await fetch("http://localhost:3000/recruiter/signin", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({ username, password })
             });
 
+            const data = await response.json();
+            console.log("✅ Response received:", data);
+
             if (response.ok) {
-                const result = await response.json();
-                alert(`Welcome, ${result.recruiter.firstname} ${result.recruiter.lastname}!`);
+                alert("Login successful!");
+
+                // Store recruiter data in session storage
+                sessionStorage.setItem("recruiter", JSON.stringify(data.user));
+
+                // Redirect to recruiter dashboard or home page
                 window.location.href = "recruiter_dashboard.html";
             } else {
-                const errorText = await response.json();
-                errorMessage.textContent = errorText.message || "Invalid credentials. Please try again.";
+                document.getElementById("errorMessage").textContent = data.message;
             }
-        } catch (err) {
-            errorMessage.textContent = "Error connecting to the server!";
-            console.error(err);
+        } catch (error) {
+            console.error("❌ Login failed:", error);
+            document.getElementById("errorMessage").textContent = "An error occurred. Please try again.";
         }
     });
 });

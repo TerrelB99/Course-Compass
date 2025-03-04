@@ -1,114 +1,107 @@
-document.addEventListener("DOMContentLoaded", async () => {
-    const jobCardsContainer = document.getElementById("jobCards");
-
-    async function fetchJobs() {
-        try {
-            const response = await fetch('/jobs');
-            const jobs = await response.json();
-
-            jobCardsContainer.innerHTML = '';
-
-            jobs.forEach((job) => {
-                const card = document.createElement("div");
-                card.className = "card";
-                card.innerHTML = `
-                    <div class="card-header">${job.jobTitle}</div>
-                    <div class="card-content">
-                        <p><strong>Company:</strong> ${job.company}</p>
-                        <p><strong>Location:</strong> ${job.location}</p>
-                        <p><strong>Salary:</strong> $${job.salary.toLocaleString()}</p>
-                        <p><strong>Description:</strong> ${job.description}</p>
-                        <p><strong>Skills:</strong> ${job.skillsRequired.join(', ')}</p>
-                    </div>
-                    <div class="card-footer">
-                        <button class="apply-now" data-job-id="${job._id}">Apply Now</button>
-                    </div>
-                `;
-                jobCardsContainer.appendChild(card);
-            });
-
-            // Apply Now Button Event Listener
-            document.querySelectorAll(".apply-now").forEach(button => {
-                button.addEventListener("click", (e) => {
-                    const jobId = e.target.dataset.jobId;
-                    openApplicationForm(jobId);
-                });
-            });
-
-        } catch (error) {
-            console.error('Error fetching jobs:', error);
-        }
-    }
-
-    // Open Application Form Modal
-    function openApplicationForm(jobId) {
-        const formHtml = `
-            <div class="application-form">
-                <h2>Apply for Job</h2>
-                <form id="applicationForm">
-                    <input type="text" id="firstName" placeholder="First Name" required>
-                    <input type="text" id="lastName" placeholder="Last Name" required>
-                    <input type="email" id="email" placeholder="Email" required>
-                    <input type="text" id="phoneNumber" placeholder="Phone Number" required>
-                    <input type="text" id="address" placeholder="Address" required>
-                    <input type="text" id="skills" placeholder="Skills (comma-separated)" required>
-                    <select id="race" required>
-                        <option value="" disabled selected>Select Race</option>
-                        <option value="Asian">Asian</option>
-                        <option value="Black">Black</option>
-                        <option value="Hispanic">Hispanic</option>
-                        <option value="Native American">Native American</option>
-                        <option value="White">White</option>
-                        <option value="Other">Other</option>
-                    </select>
-                    <label for="resume" class="resume-label">Upload Resume:</label>
-                    <input type="file" id="resume" accept=".pdf,.doc,.docx" required>
-                    <button type="submit">Submit</button>
-                    <button type="button" id="closeApplication">Cancel</button>
-                </form>
-            </div>
-        `;
-
-        const modal = document.createElement("div");
-        modal.className = "application-modal";
-        modal.innerHTML = formHtml;
-        document.body.appendChild(modal);
-
-        // Close Modal
-        document.getElementById("closeApplication").addEventListener("click", () => {
-            document.body.removeChild(modal);
-        });
-
-        // Handle Job Application Submission
-        document.getElementById("applicationForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const formData = new FormData();
-            formData.append("firstName", document.getElementById("firstName").value);
-            formData.append("lastName", document.getElementById("lastName").value);
-            formData.append("email", document.getElementById("email").value);
-            formData.append("phoneNumber", document.getElementById("phoneNumber").value);
-            formData.append("address", document.getElementById("address").value);
-            formData.append("skills", document.getElementById("skills").value);
-            formData.append("race", document.getElementById("race").value);
-            formData.append("resume", document.getElementById("resume").files[0]);
-
-            try {
-                const response = await fetch(`/apply/${jobId}`, {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                if (response.ok) {
-                    alert('Application submitted successfully!');
-                    document.body.removeChild(modal);
-                } else {
-                    throw new Error('Application submission failed');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        });
-    }
-
+document.addEventListener("DOMContentLoaded", () => {
     fetchJobs();
+
+    document.getElementById("applicationForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await submitApplication();
+    });
+
+    document.getElementById("closeApplication").addEventListener("click", () => {
+        document.getElementById("applicationModal").style.display = "none";
+    });
 });
+
+async function fetchJobs() {
+    try {
+        const response = await fetch("/jobs");
+        const jobs = await response.json();
+        const jobCardsContainer = document.getElementById("jobCards");
+
+        jobCardsContainer.innerHTML = ""; // Clear existing jobs
+        jobs.forEach(job => {
+            const jobCard = document.createElement("div");
+            jobCard.classList.add("card");
+            jobCard.innerHTML = `
+                <div class="card-header">${job.jobTitle}</div>
+                <div class="card-content">
+                    <p><strong>Company:</strong> ${job.company}</p>
+                    <p><strong>Location:</strong> ${job.location}</p>
+                    <p><strong>Salary:</strong> $${job.salary}</p>
+                    <p><strong>Description:</strong> ${job.description}</p>
+                    <p><strong>Skills Required:</strong> ${job.skillsRequired.join(", ")}</p>
+                </div>
+                <div class="card-footer">
+                    <button onclick="openApplicationModal('${job.jobId}')">Apply Now</button>
+                </div>
+            `;
+            jobCardsContainer.appendChild(jobCard);
+        });
+    } catch (error) {
+        console.error("Error fetching jobs:", error);
+    }
+}
+
+function openApplicationModal(jobId) {
+    document.getElementById("applicationForm").dataset.jobId = jobId;
+    document.getElementById("applicationModal").style.display = "block";
+}
+
+async function submitApplication() {
+    const jobID = document.getElementById("applicationForm").dataset.jobId;
+    const firstName = document.getElementById("firstName").value.trim();
+    const lastName = document.getElementById("lastName").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const phoneNumber = document.getElementById("phoneNumber").value.trim();
+    const skills = document.getElementById("skills").value.trim();
+    const address = document.getElementById("address").value.trim();
+    const resumeFile = document.getElementById("resume").files[0];
+
+    if (!firstName || !lastName || !email || !phoneNumber || !skills || !address) {
+        alert("All fields except Resume are required!");
+        return;
+    }
+
+    let resumeBase64 = "";
+    if (resumeFile) {
+        resumeBase64 = await toBase64(resumeFile);
+    }
+
+    const applicationData = {
+        studentID: "98393b",  // Change this dynamically based on logged-in student
+        firstName,
+        lastName,
+        email,
+        phone: phoneNumber,
+        skills,
+        address,
+        resume: resumeBase64
+    };
+
+    try {
+        const response = await fetch(`/jobs/${jobID}/apply`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(applicationData)
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            alert("Application submitted successfully!");
+            document.getElementById("applicationModal").style.display = "none";
+        } else {
+            alert(`Error: ${result.message}`);
+        }
+    } catch (error) {
+        console.error("Error submitting application:", error);
+        alert("Failed to submit application.");
+    }
+}
+
+function toBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}

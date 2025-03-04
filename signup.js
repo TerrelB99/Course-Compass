@@ -1,50 +1,39 @@
-const signupForm = document.getElementById('signupForm');
-const userType = document.getElementById('userType');
-const companyField = document.getElementById('company');
-const errorMessage = document.getElementById('errorMessage');
+// signup.js
+const express = require('express');
+const router = express.Router();
+const { v4: uuidv4 } = require('uuid');
+const { Student, Recruiter, Counselor, Admin } = require('./server'); // Ensure these models exist
 
-// Toggle company field visibility based on user type
-userType.addEventListener('change', () => {
-    if (userType.value === 'recruiter') {
-        companyField.style.display = 'block';
-        companyField.setAttribute('required', 'required');
-    } else {
-        companyField.style.display = 'none';
-        companyField.removeAttribute('required');
-    }
-});
+const roles = { student: Student, recruiter: Recruiter, counselor: Counselor, admin: Admin };
 
-// Handle form submission
-signupForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+// Generic Sign-up Route
+router.post('/:role', async (req, res) => {
+    const { role } = req.params;
+    if (!roles[role]) return res.status(400).json({ message: 'Invalid role' });
 
-    const firstname = document.getElementById('firstname').value.trim();
-    const lastname = document.getElementById('lastname').value.trim();
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const company = userType.value === 'recruiter' ? companyField.value.trim() : null;
-
-    if (!firstname || !lastname || !username || !password || (userType.value === 'recruiter' && !company)) {
-        errorMessage.textContent = 'All fields are required!';
-        return;
-    }
-
+    const { firstname, lastname, username, password } = req.body;
     try {
-        const response = await fetch('http://localhost:3000/signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ firstname, lastname, username, password, company, userType: userType.value }),
+        // Check if the username already exists before inserting
+        const existingUser = await roles[role].findOne({ username }).lean();
+        if (existingUser) {
+            return res.status(400).json({ message: 'Username already exists. Please choose a different one.' });
+        }
+
+        // Create new user if username is unique
+        const newUser = new roles[role]({
+            _id: uuidv4().slice(0, 6),
+            firstname,
+            lastname,
+            username,
+            password,
         });
 
-        if (response.ok) {
-            alert('Signup successful!');
-            window.location.href = userType.value === 'recruiter' ? 'recruiter_signin.html' : 'signin.html';
-        } else {
-            const errorText = await response.text();
-            errorMessage.textContent = errorText;
-        }
-    } catch (err) {
-        errorMessage.textContent = 'Error connecting to the server!';
-        console.error(err);
+        await newUser.save();
+        res.status(201).json({ message: `${role} signup successful!`, userId: newUser._id });
+    } catch (error) {
+        console.error("Signup error:", error);
+        res.status(500).json({ message: 'Server error' });
     }
 });
+
+module.exports = router;
