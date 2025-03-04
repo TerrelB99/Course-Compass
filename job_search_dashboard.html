@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Search Dashboard</title>
+    <script src="job_search_dashboard.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 2rem;
+            color: #007bff;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .card-content {
+            padding: 15px;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: center;
+            padding: 10px 15px;
+            background-color: #f9f9f9;
+            border-top: 1px solid #ddd;
+        }
+
+        .card-footer button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .card-footer button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Application Modal Styling */
+        .application-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            z-index: 1000;
+            width: 400px;
+        }
+
+        .application-modal .card-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .application-modal input,
+        .application-modal textarea,
+        .application-modal select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .application-modal label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+        }
+
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>Job Search Dashboard</h1>
+    </div>
+    <div class="card-grid" id="jobCards"></div>
+</div>
+
+<!-- Job Application Modal -->
+<div id="applicationModal" class="application-modal">
+    <div class="card">
+        <div class="card-header">Apply for Job</div>
+        <div class="card-content">
+            <form id="applicationForm">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" required>
+
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName" required>
+
+                <label for="email">Email</label>
+                <input type="email" id="email" required>
+
+                <label for="phoneNumber">Phone Number</label>
+                <input type="text" id="phoneNumber" required>
+
+                <label for="skills">Skills (comma-separated)</label>
+                <textarea id="skills" required></textarea>
+
+                <label for="address">Address</label>
+                <input type="text" id="address" required>
+
+                <label for="resume">Upload Resume (Optional)</label>
+                <input type="file" id="resume">
+
+                <div class="card-footer">
+                    <button type="submit">Submit</button>
+                    <button type="button" id="closeApplication">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
