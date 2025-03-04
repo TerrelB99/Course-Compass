@@ -1,5 +1,6 @@
 const express = require('express');
-const mongoose = require('mongoose');
+const router = express.Router(); // ✅ Fix: Define the router
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const bodyParser = require('body-parser');
 const path = require('path');
 
@@ -10,236 +11,283 @@ app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(__dirname));
 
-// MongoDB connection
-mongoose
-    .connect('mongodb+srv://tbrown12354:Goku2020$@coursecompass.lespq.mongodb.net/CourseCompass?retryWrites=true&w=majority', {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    })
-    .then(() => console.log('Connected to MongoDB Atlas'))
-    .catch((err) => console.error('Error connecting to MongoDB:', err.message));
+// MongoDB Connection String
+const uri = "mongodb+srv://tbrown12354:SGoku1932@coursecompass.lespq.mongodb.net/?retryWrites=true&w=majority&appName=CourseCompass";
 
-// Schemas
-const studentSchema = new mongoose.Schema({
-    userID: String,
-    username: String,
-    password: String,
-    firstname: String,
-    lastname: String,
-    company: String, // For recruiters
-    jobPosts: Array, // For recruiters
-    appliedJobs: Array, // For students
-    savedJobs: Array, // For students
-    recommenderCode: String,
+const client = new MongoClient(uri, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+    }
 });
 
-const jobSchema = new mongoose.Schema({
-    recruiterId: String,
-    jobTitle: String,
-    description: String,
-    location: String,
-    postedDate: { type: Date, default: Date.now },
-    salary: Number,
-    skillsRequired: [String],
-    applicants: [
-        {
-            userId: String,
-            firstName: String,
-            lastName: String,
-            email: String,
-            resume: String, // Base64-encoded resume
-        },
-    ],
-    company: String,
-});
+let database, studentsCollection, recruitersCollection, jobsCollection;
 
-const Student = mongoose.model('Student', studentSchema, 'Student');
-const Job = mongoose.model('Job', jobSchema);
+async function connectDB() {
+    try {
+        await client.connect();
+        database = client.db("CourseCompass");
+        studentsCollection = database.collection("students");
+        recruitersCollection = database.collection("recruiters");
+        jobsCollection = database.collection("jobs");
+        console.log("✅ Successfully connected to MongoDB!");
+    } catch (error) {
+        console.error("❌ MongoDB Connection Error:", error.message);
+    }
+}
+connectDB();
 
-// Routes
-
-// Serve welcome.html as the root page
+// Serve the login page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'welcome.html'));
 });
 
-// Serve apply_job.html for application submission
-app.get('/apply_job.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'apply_job.html'));
-});
-
-// Student Sign-In
+// ✅ **Student Sign-In Route**
 app.post('/student/signin', async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        const student = await Student.findOne({ username });
+        console.log("🔍 Searching for student username:", username);
+
+        if (!studentsCollection) {
+            return res.status(500).json({ message: "Database connection not established" });
+        }
+
+        const student = await studentsCollection.findOne({ username });
+
         if (!student || student.password !== password) {
+            console.log(`❌ Invalid credentials for student: ${username}`);
             return res.status(400).json({ message: 'Invalid username or password' });
         }
-        res.status(200).json({ student });
+
+        console.log(`🎉 Student login successful for: ${username}`);
+        res.status(200).json({ userType: "student", user: student });
     } catch (err) {
+        console.error("❌ Error during student sign-in:", err.message);
         res.status(500).json({ message: 'Internal Server Error', error: err.message });
     }
 });
 
-// Recruiter Sign-In
+// ✅ **Recruiter Sign-In Route**
 app.post('/recruiter/signin', async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        const recruiter = await Student.findOne({ username, company: { $exists: true } });
+        console.log("🔍 Searching for recruiter username:", username);
+
+        if (!recruitersCollection) {
+            return res.status(500).json({ message: "Database connection not established" });
+        }
+
+        const recruiter = await recruitersCollection.findOne({ username });
+
         if (!recruiter || recruiter.password !== password) {
+            console.log(`❌ Invalid credentials for recruiter: ${username}`);
             return res.status(400).json({ message: 'Invalid username or password' });
         }
-        res.status(200).json({ recruiter });
+
+        console.log(`🎉 Recruiter login successful for: ${username}`);
+        res.status(200).json({ userType: "recruiter", user: recruiter });
     } catch (err) {
+        console.error("❌ Error during recruiter sign-in:", err.message);
         res.status(500).json({ message: 'Internal Server Error', error: err.message });
     }
 });
 
-// Sign-Up (Student or Recruiter)
-app.post('/signup', async (req, res) => {
-    const { firstname, lastname, username, password, company, userType } = req.body;
+// ✅ **Recruiter Posts a Job**
+const { v4: uuidv4 } = require('uuid'); // Import UUID library at the top
 
-    try {
-        const existingUser = await Student.findOne({ username });
-        if (existingUser) {
-            return res.status(400).json({ message: 'Username already exists' });
-        }
-
-        const newUser = new Student({
-            userID: new mongoose.Types.ObjectId().toString(),
-            firstname,
-            lastname,
-            username,
-            password,
-            ...(userType === 'recruiter' ? { company, jobPosts: [] } : { appliedJobs: [], savedJobs: [] }),
-        });
-
-        await newUser.save();
-        res.status(201).json({ message: 'Signup successful!' });
-    } catch (err) {
-        res.status(500).json({ message: 'Internal Server Error', error: err.message });
-    }
-});
-
-// Add a Job
 app.post('/jobs', async (req, res) => {
     try {
-        const job = new Job(req.body);
-        await job.save();
-        res.status(201).json({ message: 'Job created successfully', job });
-    } catch (err) {
-        res.status(500).json({ message: 'Error creating job', error: err.message });
+        const { jobTitle, company, location, salary, description, skillsRequired, recruiterID } = req.body;
+
+        if (!jobTitle || !company || !location || !salary || !description || !skillsRequired || !recruiterID) {
+            console.error("❌ Missing fields in job data:", req.body);
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        const newJob = {
+            jobId: uuidv4(),  // ✅ Generate a unique jobId
+            jobTitle,
+            company,
+            location,
+            salary: Number(salary),  // Ensure salary is a number
+            description,
+            skillsRequired: Array.isArray(skillsRequired) ? skillsRequired : skillsRequired.split(","),
+            recruiterID,
+            postedDate: new Date(),
+            applicants: []
+        };
+
+        const result = await jobsCollection.insertOne(newJob);
+        console.log("✅ Job posted successfully:", result.insertedId);
+
+        res.status(201).json({ message: "Job posted successfully!", jobId: newJob.jobId });
+    } catch (error) {
+        console.error("❌ Error posting job:", error);
+        res.status(500).json({ message: "Error posting job", error: error.message });
     }
 });
 
-// Fetch Jobs
+
+
+// ✅ Get All Jobs (Visible to Students)
 app.get('/jobs', async (req, res) => {
     try {
-        const jobs = await Job.find({});
+        const jobs = await jobsCollection.find().toArray();
         res.status(200).json(jobs);
-    } catch (err) {
-        res.status(500).json({ message: 'Error fetching jobs', error: err.message });
-    }
-});
-
-// Fetch Applicants for a Job
-app.get('/jobs/:jobId/applicants', async (req, res) => {
-    const { jobId } = req.params;
-
-    try {
-        const job = await Job.findById(jobId);
-        if (!job) {
-            return res.status(404).json({ message: 'Job not found' });
-        }
-
-        const applicantsWithResumes = job.applicants.map(applicant => ({
-            firstName: applicant.firstName,
-            lastName: applicant.lastName,
-            email: applicant.email,
-            resume: `data:application/pdf;base64,${applicant.resume}` // If resumes are Base64 encoded
-        }));
-
-        res.status(200).json(applicantsWithResumes);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching applicants', error: error.message });
+        res.status(500).json({ message: "Error fetching jobs", error: error.message });
     }
 });
 
-// Submit Job Application
-app.post('/apply/:jobId', async (req, res) => {
-    const { jobId } = req.params;
-    const { firstName, lastName, email, resume } = req.body;
+// ✅ Get Jobs Posted by Specific Recruiter
+app.get('/jobs/recruiter/:recruiterID', async (req, res) => {
+    const { recruiterID } = req.params;
 
     try {
-        const job = await Job.findById(jobId);
-        if (!job) {
-            return res.status(404).json({ message: 'Job not found' });
+        const jobs = await jobsCollection.find({ recruiterID }).toArray();
+        res.status(200).json(jobs);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching recruiter's jobs", error: error.message });
+    }
+});
+
+// ✅ **Student Applies for a Job**
+app.post('/jobs/:jobID/apply', async (req, res) => {
+    try {
+        const { jobID } = req.params;
+        const { studentID, firstName, lastName, email, phone, skills, address, resume } = req.body;
+
+        if (!studentID || !firstName || !lastName || !email) {
+            return res.status(400).json({ message: "Missing required application details" });
         }
 
-        job.applicants.push({ firstName, lastName, email, resume });
-        await job.save();
-
-        res.status(201).json({ message: 'Application submitted successfully' });
-    } catch (err) {
-        res.status(500).json({ message: 'Error submitting application', error: err.message });
-    }
-});
-
-// Fetch All Students
-app.get('/students', async (req, res) => {
-    try {
-        const students = await Student.find({}, 'userID firstname lastname username password');
-        res.status(200).json(students);
-    } catch (err) {
-        res.status(500).json({ message: 'Error fetching students', error: err.message });
-    }
-});
-
-
-// Delete an applicant from a job permanently
-app.delete('/jobs/:jobId/applicants/:applicantId', async (req, res) => {
-    const { jobId, applicantId } = req.params;
-
-    try {
-        const job = await Job.findById(jobId);
+        // Find the job by jobId
+        const job = await jobsCollection.findOne({ jobId: jobID });
         if (!job) {
             return res.status(404).json({ message: "Job not found" });
         }
 
-        // Remove applicant permanently
-        job.applicants = job.applicants.filter(applicant => applicant._id.toString() !== applicantId);
-        await job.save();
+        const application = {
+            studentID,
+            firstName,
+            lastName,
+            email,
+            phone,
+            skills: skills ? skills.split(",") : [],
+            address,
+            resume,
+            appliedAt: new Date(),
+            status: "Pending"
+        };
 
-        res.status(200).json({ message: "Application permanently deleted" });
-    } catch (error) {
-        res.status(500).json({ message: "Error deleting application", error: error.message });
-    }
-});
-
-
-// Delete a Job
-app.delete('/jobs/:jobId', async (req, res) => {
-    const { jobId } = req.params;
-
-    try {
-        const job = await Job.findByIdAndDelete(jobId);
-        if (!job) {
-            return res.status(404).json({ message: 'Job not found' });
-        }
-
-        await Student.updateMany(
-            { appliedJobs: { $elemMatch: { jobId } } },
-            { $pull: { appliedJobs: { jobId } } }
+        // Update job applicants list
+        await jobsCollection.updateOne(
+            { jobId: jobID },
+            { $push: { applicants: application } }
         );
 
-        res.status(200).json({ message: 'Job and associated applications deleted successfully' });
+        res.status(200).json({ message: "Application submitted successfully!" });
     } catch (error) {
-        res.status(500).json({ message: 'Error deleting job', error: error.message });
+        console.error("Error submitting application:", error);
+        res.status(500).json({ message: "Error submitting application", error: error.message });
     }
 });
 
-// Start server
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+
+// Allow Recruiters to Send Notifications
+router.post('/send', async (req, res) => {
+    try {
+        const { recruiterID, studentID, message } = req.body;
+
+        // Find the student in the database
+        const student = await studentsCollection.findOne({ studentId: studentID });
+        if (!student) {
+            return res.status(404).json({ message: "Student not found" });
+        }
+
+        // Create the notification object
+        const notification = {
+            senderID: recruiterID,
+            senderType: "Recruiter",
+            message,
+            timestamp: new Date(),
+            replies: []
+        };
+
+        // Update the student's notifications array
+        await studentsCollection.updateOne(
+            { studentId: studentID },
+            { $push: { notifications: notification } }
+        );
+
+        res.status(200).json({ message: "Notification sent successfully!" });
+    } catch (error) {
+        console.error("❌ Error sending notification:", error);
+        res.status(500).json({ message: "Error sending notification" });
+    }
+});
+
+
+
+// ✅ **Recruiter Sends Notification to Student**
+app.post('/notifications', async (req, res) => {
+    const { studentID, recruiterName, message } = req.body;
+
+    try {
+        const student = await studentsCollection.findOne({ _id: new ObjectId(studentID) });
+
+        if (!student) {
+            return res.status(404).json({ message: "Student not found" });
+        }
+
+        student.notifications = student.notifications || [];
+        student.notifications.push({ recruiterName, message, timestamp: new Date(), status: "unread" });
+
+        await studentsCollection.updateOne({ _id: new ObjectId(studentID) }, { $set: { notifications: student.notifications } });
+
+        res.status(201).json({ message: "Notification sent successfully!" });
+    } catch (error) {
+        res.status(500).json({ message: "Error sending notification", error: error.message });
+    }
+});
+
+
+// ✅ **Get Student Notifications**
+app.get('/notifications/:studentID', async (req, res) => {
+    const { studentID } = req.params;
+
+    try {
+        const student = await studentsCollection.findOne({ _id: new ObjectId(studentID) });
+
+        if (!student || !student.notifications) {
+            return res.status(404).json({ message: "No notifications found" });
+        }
+
+        res.status(200).json(student.notifications);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching notifications", error: error.message });
+    }
+});
+
+// ✅ **Get Applicants for a Job**
+app.get('/jobs/:jobID/applicants', async (req, res) => {
+    const { jobID } = req.params;
+
+    try {
+        const job = await jobsCollection.findOne({ _id: new ObjectId(jobID) });
+
+        if (!job) {
+            return res.status(404).json({ message: "Job not found" });
+        }
+
+        res.status(200).json(job.applicants);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching applicants", error: error.message });
+    }
+});
+
+// Start the server
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
