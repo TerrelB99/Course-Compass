@@ -277,13 +277,13 @@ app.get('/jobs/:jobID/applicants', async (req, res) => {
     const { jobID } = req.params;
 
     try {
-        const job = await jobsCollection.findOne({ _id: new ObjectId(jobID) });
+        const job = await jobsCollection.findOne({ jobId: jobID });
 
         if (!job) {
             return res.status(404).json({ message: "Job not found" });
         }
 
-        res.status(200).json(job.applicants);
+        res.status(200).json(job.applicants || []);
     } catch (error) {
         res.status(500).json({ message: "Error fetching applicants", error: error.message });
     }
