@@ -32,9 +32,6 @@
     }
 
     .post-job-btn {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
       padding: 10px 20px;
       font-size: 1rem;
       background-color: #007bff;
@@ -42,6 +39,8 @@
       border: none;
       cursor: pointer;
       border-radius: 5px;
+      display: block;
+      margin: 20px auto;
     }
 
     .card-grid {
@@ -55,13 +54,7 @@
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       overflow: hidden;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      position: relative;
-    }
-
-    .card:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+      padding: 15px;
     }
 
     .card-header {
@@ -70,7 +63,6 @@
       padding: 15px;
       text-align: center;
       font-size: 1.2rem;
-      font-weight: 500;
     }
 
     .card-content {
@@ -91,11 +83,7 @@
       border-radius: 5px;
     }
 
-    .blue-btn:hover {
-      background-color: #0056b3;
-    }
-
-    /* Job Posting Modal */
+    /* Job Posting Modal Styling */
     .job-modal {
       display: none;
       position: fixed;
@@ -107,8 +95,60 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
       border-radius: 8px;
       z-index: 1000;
-      width: 400px;
+      width: 90%;
+      max-width: 400px;
     }
+
+    .form-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .form-container h2 {
+      background: #007bff;
+      color: white;
+      padding: 10px;
+      width: 100%;
+      text-align: center;
+      border-radius: 5px;
+    }
+
+    .form-container input,
+    .form-container textarea,
+    .form-container button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .red-btn {
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .submit-btn {
+      background: blue;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .cancel-btn {
+      background: red;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+
   </style>
 </head>
 <body>
@@ -121,46 +161,32 @@
   <div class="card-grid" id="job-list"></div>
 </div>
 
-<!-- Applicants Modal -->
-<div id="applicantsModal" class="modal">
-  <div class="modal-content">
-    <span id="closeApplicantsModal" class="close">&times;</span>
-    <h2>Applicants</h2>
-    <div id="applicantsList"></div>
-  </div>
-</div>
-
-
 <!-- Job Posting Modal -->
 <div id="postJobModal" class="job-modal">
-  <div class="card">
-    <div class="card-header">Post a Job</div>
-    <div class="card-content">
-      <form id="postJobForm">
-        <label for="jobTitle">Job Title</label>
-        <input type="text" id="jobTitle" required>
+  <div class="form-container">
+    <h2>Post a Job</h2>
+    <form id="postJobForm">
+      <label for="jobTitle">Job Title</label>
+      <input type="text" id="jobTitle" required>
 
-        <label for="company">Company</label>
-        <input type="text" id="company" required>
+      <label for="company">Company</label>
+      <input type="text" id="company" required>
 
-        <label for="location">Location</label>
-        <input type="text" id="location" required>
+      <label for="location">Location</label>
+      <input type="text" id="location" required>
 
-        <label for="salary">Salary</label>
-        <input type="number" id="salary" required>
+      <label for="salary">Salary</label>
+      <input type="number" id="salary" required>
 
-        <label for="description">Job Description</label>
-        <textarea id="description" required></textarea>
+      <label for="description">Job Description</label>
+      <textarea id="description" required></textarea>
 
-        <label for="skillsRequired">Skills Required (comma-separated)</label>
-        <input type="text" id="skillsRequired" required>
+      <label for="skillsRequired">Skills Required (comma-separated)</label>
+      <input type="text" id="skillsRequired" required>
 
-        <div class="card-footer">
-          <button type="submit" class="blue-btn">Post Job</button>
-          <button type="button" id="closePostJob" class="blue-btn">Cancel</button>
-        </div>
-      </form>
-    </div>
+      <button type="submit" class="submit-btn">Post Job</button>
+      <button type="button" id="closePostJob" class="cancel-btn">Cancel</button>
+    </form>
   </div>
 </div>
 

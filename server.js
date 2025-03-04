@@ -96,37 +96,76 @@ app.post('/recruiter/signin', async (req, res) => {
 });
 
 // ✅ **Recruiter Posts a Job**
-const { v4: uuidv4 } = require('uuid'); // Import UUID library at the top
+const { v4: uuidv4 } = require("uuid");
 
 app.post('/jobs', async (req, res) => {
     try {
         const { jobTitle, company, location, salary, description, skillsRequired, recruiterID } = req.body;
 
+        // **DEBUG: Log incoming data**
+        console.log("Received job data:", req.body);
+
+        // **Check if required fields are missing**
         if (!jobTitle || !company || !location || !salary || !description || !skillsRequired || !recruiterID) {
-            console.error("❌ Missing fields in job data:", req.body);
-            return res.status(400).json({ message: "All fields are required" });
+            console.error("Error: Missing required fields.");
+            return res.status(400).json({ message: "All fields are required." });
         }
 
         const newJob = {
-            jobId: uuidv4(),  // ✅ Generate a unique jobId
+            jobId: uuidv4(),
             jobTitle,
             company,
             location,
-            salary: Number(salary),  // Ensure salary is a number
+            salary: Number(salary),
             description,
-            skillsRequired: Array.isArray(skillsRequired) ? skillsRequired : skillsRequired.split(","),
+            skillsRequired: Array.isArray(skillsRequired)
+                ? skillsRequired.map(skill => skill.trim())
+                : skillsRequired.split(",").map(skill => skill.trim()), // Ensure it's an array
             recruiterID,
             postedDate: new Date(),
             applicants: []
         };
 
+        // **Insert job into database & log result**
         const result = await jobsCollection.insertOne(newJob);
-        console.log("✅ Job posted successfully:", result.insertedId);
+        console.log("Insert result:", result);
 
-        res.status(201).json({ message: "Job posted successfully!", jobId: newJob.jobId });
+        if (result.acknowledged) {
+            res.status(201).json({ message: "Job posted successfully!", job: newJob });
+        } else {
+            console.error("Database Insert Error: Job not inserted.");
+            res.status(500).json({ message: "Failed to insert job into database." });
+        }
     } catch (error) {
-        console.error("❌ Error posting job:", error);
-        res.status(500).json({ message: "Error posting job", error: error.message });
+        console.error("Internal Server Error:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+});
+
+// API to Delete a Job
+app.delete('/jobs/:jobId', async (req, res) => {
+    try {
+        const { jobId } = req.params;
+        console.log(`Deleting job with ID: ${jobId}`);
+
+        // Check if job exists before deleting
+        const jobExists = await jobsCollection.findOne({ jobId });
+        if (!jobExists) {
+            return res.status(404).json({ message: "Job not found." });
+        }
+
+        const deleteResult = await jobsCollection.deleteOne({ jobId });
+
+        if (deleteResult.deletedCount === 1) {
+            console.log("Job deleted successfully.");
+            res.status(200).json({ message: "Job deleted successfully!" });
+        } else {
+            console.error("Job deletion failed.");
+            res.status(500).json({ message: "Failed to delete job from database." });
+        }
+    } catch (error) {
+        console.error("Error deleting job:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
     }
 });
 

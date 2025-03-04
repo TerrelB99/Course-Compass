@@ -19,6 +19,7 @@
             height: 100vh;
             flex-direction: column;
         }
+
         .auth-container {
             background-color: #fff;
             border-radius: 8px;
@@ -27,15 +28,18 @@
             width: 100%;
             max-width: 400px;
         }
+
         .auth-header {
             text-align: center;
             margin-bottom: 1.5rem;
         }
+
         .auth-header h1 {
             margin: 0;
             font-size: 1.5rem;
             color: #007bff;
         }
+
         .auth-title {
             text-align: center;
             font-size: 3.5rem;
@@ -45,6 +49,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+
         .auth-form input {
             width: calc(100% - 24px);
             margin-bottom: 1rem;
@@ -53,6 +58,7 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+
         .auth-form button {
             width: 100%;
             padding: 0.8rem;
@@ -63,9 +69,26 @@
             border-radius: 4px;
             cursor: pointer;
         }
+
         .auth-form button:hover {
             background-color: #0056b3;
         }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .auth-switch a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-switch a:hover {
+            text-decoration: underline;
+        }
+
         .error-message {
             color: #dc3545;
             font-size: 0.9rem;
@@ -75,14 +98,23 @@
     </style>
 </head>
 <body>
-<div class="auth-container">
+<div class="auth-header">
+    <h1 style="color: #007bff;">Student</h1>
     <h1 class="auth-title">Career Compass</h1>
+</div>
+<div class="auth-container">
+    <div class="auth-header">
+        <h1 id="authTitle">Sign In</h1>
+    </div>
     <form class="auth-form" id="authForm">
         <div class="error-message" id="errorMessage"></div>
         <input type="text" id="username" placeholder="Enter Username" required>
         <input type="password" id="password" placeholder="Enter Password" required>
         <button type="submit" id="authButton">Sign In</button>
     </form>
+    <div class="auth-switch">
+        <span id="switchMessage">Don't have an account?</span> <a href="signup.html" id="switchLink">Sign Up</a>
+    </div>
 </div>
 </body>
 </html>

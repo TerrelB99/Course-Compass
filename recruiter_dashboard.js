@@ -4,9 +4,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     const closePostJob = document.getElementById("closePostJob");
     const postJobForm = document.getElementById("postJobForm");
     const addJobBtn = document.getElementById("add-job");
-    const applicantsModal = document.getElementById("applicantsModal");
-    const applicantsList = document.getElementById("applicantsList");
-    const closeApplicantsModal = document.getElementById("closeApplicantsModal");
 
     const recruiter = JSON.parse(sessionStorage.getItem("recruiter"));
     if (!recruiter) {
@@ -32,82 +29,81 @@ document.addEventListener("DOMContentLoaded", async function () {
                         <p><strong>Description:</strong> ${job.description}</p>
                     </div>
                     <div class="card-footer">
-                        <button class="blue-btn send-message" data-job-id="${job.jobId}">Send Message</button>
                         <button class="blue-btn view-applicants" data-job-id="${job.jobId}">View Applicants</button>
+                        <button class="red-btn delete-job" data-job-id="${job.jobId}">Delete Job</button>
                     </div>
                 `;
                 jobList.appendChild(jobCard);
             });
 
-            document.querySelectorAll(".send-message").forEach(button => {
-                button.addEventListener("click", async function (e) {
-                    const jobId = e.target.dataset.jobId;
-                    const message = prompt("Enter your message to the applicants:");
-                    if (message) {
-                        await sendMessage(jobId, message);
+            document.querySelectorAll(".view-applicants").forEach(button => {
+                button.addEventListener("click", (event) => {
+                    const jobId = event.target.getAttribute("data-job-id");
+                    window.location.href = `viewapplicants.html?jobId=${jobId}`;
+                });
+            });
+
+            document.querySelectorAll(".delete-job").forEach(button => {
+                button.addEventListener("click", async (event) => {
+                    const jobId = event.target.getAttribute("data-job-id");
+                    if (confirm("Are you sure you want to delete this job?")) {
+                        try {
+                            const response = await fetch(`/jobs/${jobId}`, {
+                                method: "DELETE",
+                                headers: { "Content-Type": "application/json" }
+                            });
+
+                            const result = await response.json();
+
+                            if (response.ok) {
+                                alert(result.message);
+                                fetchJobs(); // Refresh job list
+                            } else {
+                                console.error("Error deleting job:", result.message);
+                                alert("Error deleting job: " + result.message);
+                            }
+                        } catch (error) {
+                            console.error("Error deleting job:", error);
+                        }
                     }
                 });
             });
 
-            document.querySelectorAll(".view-applicants").forEach(button => {
-                button.addEventListener("click", async function (e) {
-                    const jobId = e.target.dataset.jobId;
-                    await viewApplicants(jobId);
-                });
-            });
+
         } catch (error) {
             console.error("Error fetching jobs:", error);
         }
     }
 
-    async function sendMessage(jobId, message) {
-        try {
-            const response = await fetch("/notifications/send", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ recruiterID: recruiter._id, jobId, message })
-            });
-            const result = await response.json();
-            alert(result.message || "Message sent successfully!");
-        } catch (error) {
-            console.error("Error sending message:", error);
-        }
-    }
+    addJobBtn.addEventListener("click", () => {
+        postJobModal.style.display = "block";
+    });
 
-    async function viewApplicants(jobId) {
-        try {
-            const response = await fetch(`/jobs/${jobId}/applicants`);
-            const applicants = await response.json();
+    closePostJob.addEventListener("click", () => {
+        postJobModal.style.display = "none";
+    });
 
-            applicantsList.innerHTML = "";
-            if (!applicants || applicants.length === 0) {
-                applicantsList.innerHTML = `<p>No applicants for this job yet.</p>`;
-            } else {
-                applicants.forEach(applicant => {
-                    const applicantInfo = document.createElement("div");
-                    applicantInfo.className = "applicant-card";
-                    applicantInfo.innerHTML = `
-                    <p><strong>Name:</strong> ${applicant.firstName} ${applicant.lastName}</p>
-                    <p><strong>Email:</strong> ${applicant.email}</p>
-                    <p><strong>Phone:</strong> ${applicant.phone}</p>
-                    <p><strong>Skills:</strong> ${applicant.skills ? applicant.skills.join(", ") : "N/A"}</p>
-                    <p><strong>Address:</strong> ${applicant.address || "N/A"}</p>
-                    <p><strong>Resume:</strong> ${applicant.resume ? `<a href="${applicant.resume}" target="_blank">View Resume</a>` : "Not provided"}</p>
-                `;
-                    applicantsList.appendChild(applicantInfo);
-                });
-            }
+    postJobForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const newJob = {
+            jobTitle: document.getElementById("jobTitle").value,
+            company: document.getElementById("company").value,
+            location: document.getElementById("location").value,
+            salary: document.getElementById("salary").value,
+            description: document.getElementById("description").value,
+            skillsRequired: document.getElementById("skillsRequired").value.split(','),
+            recruiterID: recruiter._id
+        };
 
-            applicantsModal.style.display = "block";
-        } catch (error) {
-            console.error("Error fetching applicants:", error);
-        }
-    }
+        await fetch("/jobs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newJob)
+        });
 
-
-    addJobBtn.addEventListener("click", () => postJobModal.style.display = "block");
-    closePostJob.addEventListener("click", () => postJobModal.style.display = "none");
-    closeApplicantsModal.addEventListener("click", () => applicantsModal.style.display = "none");
+        postJobModal.style.display = "none";
+        fetchJobs();
+    });
 
     fetchJobs();
 });
