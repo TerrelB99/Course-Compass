@@ -1,21 +1,36 @@
-module.exports = router;
+document.addEventListener("DOMContentLoaded", async function () {
+    const notificationsContainer = document.getElementById("notification-list");
+    const studentId = localStorage.getItem("studentID");
 
-// notifications.js (Backend API)
-const express = require('express');
-const router = express.Router();
+    async function fetchMessages() {
+        try {
+            const response = await fetch(`/messages/${studentId}`);
+            if (!response.ok) {
+                throw new Error("Failed to fetch messages");
+            }
 
-// Backend API to check if notifications route is working
-router.get('/', (req, res) => {
-    res.send('Notifications route working!');
+            const messages = await response.json();
+            notificationsContainer.innerHTML = "";
+            if (messages.length === 0) {
+                notificationsContainer.innerHTML = "<p>No new messages.</p>";
+                return;
+            }
+
+            messages.forEach(msg => {
+                const messageItem = document.createElement("li");
+                messageItem.className = "notification-item";
+                messageItem.innerHTML = `
+                    <p><strong>From:</strong> ${msg.senderId}</p>
+                    <p><strong>Message:</strong> ${msg.message}</p>
+                    <p><strong>Received:</strong> ${new Date(msg.timestamp).toLocaleString()}</p>
+                `;
+                notificationsContainer.appendChild(messageItem);
+            });
+        } catch (error) {
+            console.error("Error fetching messages:", error);
+            notificationsContainer.innerHTML = "<p>Error loading messages.</p>";
+        }
+    }
+
+    fetchMessages();
 });
-
-// Add a route for fetching user notifications (Placeholder Example)
-router.get('/:userID', (req, res) => {
-    const { userID } = req.params;
-    res.json([
-        { _id: "1", senderName: "Recruiter A", message: "New job opportunity!", replies: [] },
-        { _id: "2", senderName: "Admin", message: "Your profile has been approved.", replies: [] }
-    ]);
-});
-
-module.exports = router;

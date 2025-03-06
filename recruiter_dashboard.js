@@ -5,71 +5,102 @@ document.addEventListener("DOMContentLoaded", async function () {
     const postJobForm = document.getElementById("postJobForm");
     const addJobBtn = document.getElementById("add-job");
 
+    const recruiter = JSON.parse(sessionStorage.getItem("recruiter"));
+    if (!recruiter) {
+        alert("You need to log in as a recruiter.");
+        return;
+    }
+
     async function fetchJobs() {
-        const response = await fetch("/jobs/recruiter/3963f6");
-        const jobs = await response.json();
-        jobList.innerHTML = "";
-        jobs.forEach(job => {
-            const jobCard = document.createElement("div");
-            jobCard.className = "card";
-            jobCard.innerHTML = `
-                <div class="card-header">${job.jobTitle}</div>
-                <div class="card-content">
-                    <p><strong>Company:</strong> ${job.company}</p>
-                    <p><strong>Location:</strong> ${job.location}</p>
-                    <p><strong>Salary:</strong> $${job.salary}</p>
-                    <p><strong>Description:</strong> ${job.description}</p>
-                </div>
-                <div class="card-footer">
-                    <button class="blue-btn send-message" data-job="${job.jobId}">Send Message</button>
-                    <button class="blue-btn view-applicants" data-job="${job.jobId}">View Applicants</button>
-                </div>
-            `;
-            jobList.appendChild(jobCard);
-        });
+        try {
+            const response = await fetch(`/jobs/recruiter/${recruiter._id}`);
+            const jobs = await response.json();
+            jobList.innerHTML = "";
 
-        document.querySelectorAll(".send-message").forEach(button => {
-            button.addEventListener("click", (event) => {
-                const jobId = event.target.getAttribute("data-job");
-                sendMessage(jobId);
+            jobs.forEach(job => {
+                const jobCard = document.createElement("div");
+                jobCard.className = "card";
+                jobCard.innerHTML = `
+                    <div class="card-header">${job.jobTitle}</div>
+                    <div class="card-content">
+                        <p><strong>Company:</strong> ${job.company}</p>
+                        <p><strong>Location:</strong> ${job.location}</p>
+                        <p><strong>Salary:</strong> $${job.salary}</p>
+                        <p><strong>Description:</strong> ${job.description}</p>
+                    </div>
+                    <div class="card-footer">
+                        <button class="blue-btn view-applicants" data-job-id="${job.jobId}">View Applicants</button>
+                        <button class="red-btn delete-job" data-job-id="${job.jobId}">Delete Job</button>
+                    </div>
+                `;
+                jobList.appendChild(jobCard);
             });
-        });
 
-        document.querySelectorAll(".view-applicants").forEach(button => {
-            button.addEventListener("click", (event) => {
-                const jobId = event.target.getAttribute("data-job");
-                viewApplicants(jobId);
+            document.querySelectorAll(".view-applicants").forEach(button => {
+                button.addEventListener("click", (event) => {
+                    const jobId = event.target.getAttribute("data-job-id");
+                    window.location.href = `viewapplicants.html?jobId=${jobId}`;
+                });
             });
-        });
+
+            document.querySelectorAll(".delete-job").forEach(button => {
+                button.addEventListener("click", async (event) => {
+                    const jobId = event.target.getAttribute("data-job-id");
+                    if (confirm("Are you sure you want to delete this job?")) {
+                        try {
+                            const response = await fetch(`/jobs/${jobId}`, {
+                                method: "DELETE",
+                                headers: { "Content-Type": "application/json" }
+                            });
+
+                            const result = await response.json();
+
+                            if (response.ok) {
+                                alert(result.message);
+                                fetchJobs(); // Refresh job list
+                            } else {
+                                console.error("Error deleting job:", result.message);
+                                alert("Error deleting job: " + result.message);
+                            }
+                        } catch (error) {
+                            console.error("Error deleting job:", error);
+                        }
+                    }
+                });
+            });
+
+
+        } catch (error) {
+            console.error("Error fetching jobs:", error);
+        }
     }
 
-    function sendMessage(jobId) {
-        alert(`Sending message to applicants of job: ${jobId}`);
-    }
+    addJobBtn.addEventListener("click", () => {
+        postJobModal.style.display = "block";
+    });
 
-    function viewApplicants(jobId) {
-        alert(`Viewing applicants for job: ${jobId}`);
-    }
+    closePostJob.addEventListener("click", () => {
+        postJobModal.style.display = "none";
+    });
 
-    addJobBtn.addEventListener("click", () => postJobModal.style.display = "block");
-    closePostJob.addEventListener("click", () => postJobModal.style.display = "none");
-
-    postJobForm.addEventListener("submit", async function (event) {
-        event.preventDefault();
-        const jobData = {
+    postJobForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const newJob = {
             jobTitle: document.getElementById("jobTitle").value,
             company: document.getElementById("company").value,
             location: document.getElementById("location").value,
             salary: document.getElementById("salary").value,
             description: document.getElementById("description").value,
-            skillsRequired: document.getElementById("skillsRequired").value.split(","),
-            recruiterID: "3963f6"
+            skillsRequired: document.getElementById("skillsRequired").value.split(','),
+            recruiterID: recruiter._id
         };
+
         await fetch("/jobs", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(jobData)
+            body: JSON.stringify(newJob)
         });
+
         postJobModal.style.display = "none";
         fetchJobs();
     });

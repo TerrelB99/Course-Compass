@@ -1,6 +1,6 @@
 const express = require('express');
-const bcrypt = require("bcryptjs"); // ✅ Import bcryptjs
 const router = express.Router(); // ✅ Fix: Define the router
+const bcrypt = require("bcrypt"); // ✅ Import bcryptjs
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const bodyParser = require('body-parser');
 const path = require('path');
@@ -23,7 +23,7 @@ const client = new MongoClient(uri, {
     }
 });
 
-let database, studentsCollection, recruitersCollection, jobsCollection, counselorsCollection, adminsCollection;
+let database, studentsCollection, recruitersCollection, jobsCollection;
 
 async function connectDB() {
     try {
@@ -34,6 +34,7 @@ async function connectDB() {
         jobsCollection = database.collection("jobs");
         counselorsCollection = database.collection("counselors");
         adminsCollection = database.collection("admins");
+        messagesCollection = database.collection("messages");
         console.log("✅ Successfully connected to MongoDB!");
     } catch (error) {
         console.error("❌ MongoDB Connection Error:", error.message);
@@ -99,37 +100,76 @@ app.post('/recruiter/signin', async (req, res) => {
 });
 
 // ✅ **Recruiter Posts a Job**
-const { v4: uuidv4 } = require('uuid'); // Import UUID library at the top
+const { v4: uuidv4 } = require("uuid");
 
 app.post('/jobs', async (req, res) => {
     try {
         const { jobTitle, company, location, salary, description, skillsRequired, recruiterID } = req.body;
 
+        // **DEBUG: Log incoming data**
+        console.log("Received job data:", req.body);
+
+        // **Check if required fields are missing**
         if (!jobTitle || !company || !location || !salary || !description || !skillsRequired || !recruiterID) {
-            console.error("❌ Missing fields in job data:", req.body);
-            return res.status(400).json({ message: "All fields are required" });
+            console.error("Error: Missing required fields.");
+            return res.status(400).json({ message: "All fields are required." });
         }
 
         const newJob = {
-            jobId: uuidv4(),  // ✅ Generate a unique jobId
+            jobId: uuidv4(),
             jobTitle,
             company,
             location,
-            salary: Number(salary),  // Ensure salary is a number
+            salary: Number(salary),
             description,
-            skillsRequired: Array.isArray(skillsRequired) ? skillsRequired : skillsRequired.split(","),
+            skillsRequired: Array.isArray(skillsRequired)
+                ? skillsRequired.map(skill => skill.trim())
+                : skillsRequired.split(",").map(skill => skill.trim()), // Ensure it's an array
             recruiterID,
             postedDate: new Date(),
             applicants: []
         };
 
+        // **Insert job into database & log result**
         const result = await jobsCollection.insertOne(newJob);
-        console.log("✅ Job posted successfully:", result.insertedId);
+        console.log("Insert result:", result);
 
-        res.status(201).json({ message: "Job posted successfully!", jobId: newJob.jobId });
+        if (result.acknowledged) {
+            res.status(201).json({ message: "Job posted successfully!", job: newJob });
+        } else {
+            console.error("Database Insert Error: Job not inserted.");
+            res.status(500).json({ message: "Failed to insert job into database." });
+        }
     } catch (error) {
-        console.error("❌ Error posting job:", error);
-        res.status(500).json({ message: "Error posting job", error: error.message });
+        console.error("Internal Server Error:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+});
+
+// API to Delete a Job
+app.delete('/jobs/:jobId', async (req, res) => {
+    try {
+        const { jobId } = req.params;
+        console.log(`Deleting job with ID: ${jobId}`);
+
+        // Check if job exists before deleting
+        const jobExists = await jobsCollection.findOne({ jobId });
+        if (!jobExists) {
+            return res.status(404).json({ message: "Job not found." });
+        }
+
+        const deleteResult = await jobsCollection.deleteOne({ jobId });
+
+        if (deleteResult.deletedCount === 1) {
+            console.log("Job deleted successfully.");
+            res.status(200).json({ message: "Job deleted successfully!" });
+        } else {
+            console.error("Job deletion failed.");
+            res.status(500).json({ message: "Failed to delete job from database." });
+        }
+    } catch (error) {
+        console.error("Error deleting job:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
     }
 });
 
@@ -200,94 +240,59 @@ app.post('/jobs/:jobID/apply', async (req, res) => {
 });
 
 
-// Allow Recruiters to Send Notifications
-router.post('/send', async (req, res) => {
+// ✅ Send a Message
+app.post('/messages/send', async (req, res) => {
     try {
-        const { recruiterID, studentID, message } = req.body;
+        const { senderId, receiverId, message } = req.body;
 
-        // Find the student in the database
-        const student = await studentsCollection.findOne({ studentId: studentID });
-        if (!student) {
-            return res.status(404).json({ message: "Student not found" });
+        if (!senderId || !receiverId || !message) {
+            console.error("Message Error: Missing fields", { senderId, receiverId, message });
+            return res.status(400).json({ error: "Missing required fields" });
         }
 
-        // Create the notification object
-        const notification = {
-            senderID: recruiterID,
-            senderType: "Recruiter",
+        const newMessage = {
+            senderId,
+            receiverId,
             message,
-            timestamp: new Date(),
-            replies: []
+            timestamp: new Date()
         };
 
-        // Update the student's notifications array
-        await studentsCollection.updateOne(
-            { studentId: studentID },
-            { $push: { notifications: notification } }
-        );
-
-        res.status(200).json({ message: "Notification sent successfully!" });
+        await messagesCollection.insertOne(newMessage);
+        res.status(200).json({ message: "Message sent successfully!" });
     } catch (error) {
-        console.error("❌ Error sending notification:", error);
-        res.status(500).json({ message: "Error sending notification" });
+        console.error("Error sending message:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// ✅ Fetch Messages for a User
+app.get('/messages/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const messages = await messagesCollection.find({
+            $or: [{ senderId: userId }, { receiverId: userId }]
+        }).sort({ timestamp: -1 }).toArray();
+
+        res.status(200).json(messages);
+    } catch (error) {
+        console.error("Error fetching messages:", error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 });
 
 
-
-// ✅ **Recruiter Sends Notification to Student**
-app.post('/notifications', async (req, res) => {
-    const { studentID, recruiterName, message } = req.body;
-
+app.get('/jobs/:jobId/applicants', async (req, res) => {
     try {
-        const student = await studentsCollection.findOne({ _id: new ObjectId(studentID) });
-
-        if (!student) {
-            return res.status(404).json({ message: "Student not found" });
-        }
-
-        student.notifications = student.notifications || [];
-        student.notifications.push({ recruiterName, message, timestamp: new Date(), status: "unread" });
-
-        await studentsCollection.updateOne({ _id: new ObjectId(studentID) }, { $set: { notifications: student.notifications } });
-
-        res.status(201).json({ message: "Notification sent successfully!" });
-    } catch (error) {
-        res.status(500).json({ message: "Error sending notification", error: error.message });
-    }
-});
-
-
-// ✅ **Get Student Notifications**
-app.get('/notifications/:studentID', async (req, res) => {
-    const { studentID } = req.params;
-
-    try {
-        const student = await studentsCollection.findOne({ _id: new ObjectId(studentID) });
-
-        if (!student || !student.notifications) {
-            return res.status(404).json({ message: "No notifications found" });
-        }
-
-        res.status(200).json(student.notifications);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching notifications", error: error.message });
-    }
-});
-
-// ✅ **Get Applicants for a Job**
-app.get('/jobs/:jobID/applicants', async (req, res) => {
-    const { jobID } = req.params;
-
-    try {
-        const job = await jobsCollection.findOne({ _id: new ObjectId(jobID) });
+        const { jobId } = req.params;
+        const job = await jobsCollection.findOne({ jobId });
 
         if (!job) {
             return res.status(404).json({ message: "Job not found" });
         }
 
-        res.status(200).json(job.applicants);
+        res.status(200).json(job.applicants || []);
     } catch (error) {
+        console.error("Error fetching applicants:", error);
         res.status(500).json({ message: "Error fetching applicants", error: error.message });
     }
 });
@@ -546,6 +551,7 @@ app.get('/admin/user/:role/:id', async (req, res) => {
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 });
+
 
 // Start the server
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
