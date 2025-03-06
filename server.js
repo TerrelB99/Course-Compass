@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require("bcryptjs"); // ✅ Import bcryptjs
 const router = express.Router(); // ✅ Fix: Define the router
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const bodyParser = require('body-parser');
@@ -22,7 +23,7 @@ const client = new MongoClient(uri, {
     }
 });
 
-let database, studentsCollection, recruitersCollection, jobsCollection;
+let database, studentsCollection, recruitersCollection, jobsCollection, counselorsCollection, adminsCollection;
 
 async function connectDB() {
     try {
@@ -31,6 +32,8 @@ async function connectDB() {
         studentsCollection = database.collection("students");
         recruitersCollection = database.collection("recruiters");
         jobsCollection = database.collection("jobs");
+        counselorsCollection = database.collection("counselors");
+        adminsCollection = database.collection("admins");
         console.log("✅ Successfully connected to MongoDB!");
     } catch (error) {
         console.error("❌ MongoDB Connection Error:", error.message);
@@ -335,6 +338,211 @@ app.get('/counselors', async (req, res) => {
         res.status(200).json(counselors);
     } catch (error) {
         console.error("❌ Error fetching counselors:", error.message);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+});
+
+// ✅ **Counselor Signup Route**
+app.post('/counselor/signup', async (req, res) => {
+    try {
+        console.log("🔍 Received data:", req.body);
+
+        const { firstname, lastname, username, password, major, company } = req.body;
+
+        if (!firstname || !lastname || !username || !password || !major) {
+            console.error("❌ Missing required fields:", req.body);
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        if (!counselorsCollection) {
+            console.error("❌ Database connection not established");
+            return res.status(500).json({ message: "Database connection error" });
+        }
+
+        const existingCounselor = await counselorsCollection.findOne({ username });
+        if (existingCounselor) {
+            return res.status(400).json({ message: "Username already exists" });
+        }
+
+
+        // Create the counselor object (without counselorId)
+        const newCounselor = {
+            firstname,
+            lastname,
+            username,
+            password,
+            major,
+            company: company || "",
+            createdAt: new Date()
+        };
+
+        await counselorsCollection.insertOne(newCounselor);
+        res.status(201).json({ message: "Signup successful!" });
+    } catch (error) {
+        console.error("❌ Error during counselor signup:", error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+});
+
+// ✅ **Admin Signup Route (Fixed)**
+app.post('/admin/signup', async (req, res) => {
+    try {
+        console.log("🔍 Received data:", req.body);
+
+        const { firstname, lastname, username, password } = req.body;
+
+        if (!firstname || !lastname || !username || !password) {
+            console.error("❌ Missing required fields:", req.body);
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        if (!adminsCollection) {
+            console.error("❌ Database connection not established");
+            return res.status(500).json({ message: "Database connection error" });
+        }
+
+        const existingAdmin = await adminsCollection.findOne({ username });
+        if (existingAdmin) {
+            return res.status(400).json({ message: "Username already exists" });
+        }
+
+        // ✅ Hash the password before saving it
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create a new admin document
+        const newAdmin = {
+            firstname,
+            lastname,
+            username,
+            password: hashedPassword, // ✅ Store hashed password
+            createdAt: new Date()
+        };
+
+        await adminsCollection.insertOne(newAdmin);
+        res.status(201).json({ message: "Admin registered successfully!" });
+    } catch (error) {
+        console.error("❌ Error during admin signup:", error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+});
+
+// ✅ **Admin Sign-In Route (Fixed)**
+app.post('/admin/signin', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        console.log("🔍 Searching for admin username:", username);
+
+        if (!adminsCollection) {
+            return res.status(500).json({ message: "Database connection not established" });
+        }
+
+        // Search for the admin in the database
+        const admin = await adminsCollection.findOne({ username });
+
+        if (!admin) {
+            console.log(`❌ Admin not found: ${username}`);
+            return res.status(400).json({ message: "Invalid username or password" });
+        }
+
+        // ✅ Compare entered password with stored hashed password
+        const isMatch = await bcrypt.compare(password, admin.password);
+        if (!isMatch) {
+            console.log(`❌ Incorrect password for: ${username}`);
+            return res.status(400).json({ message: "Invalid username or password" });
+        }
+
+        console.log(`🎉 Admin login successful for: ${username}`);
+        res.status(200).json({ admin });
+    } catch (err) {
+        console.error("❌ Error during admin sign-in:", err.message);
+        res.status(500).json({ message: "Internal Server Error", error: err.message });
+    }
+});
+
+app.get('/admin/users', async (req, res) => {
+    try {
+        if (!studentsCollection || !recruitersCollection || !counselorsCollection) {
+            return res.status(500).json({ message: "Database connection not established" });
+        }
+
+        const students = await studentsCollection.find().toArray();
+        const recruiters = await recruitersCollection.find().toArray();
+        const counselors = await counselorsCollection.find().toArray();
+
+        const users = [
+            ...students.map(user => ({ ...user, role: "Student" })),
+            ...recruiters.map(user => ({ ...user, role: "Recruiter" })),
+            ...counselors.map(user => ({ ...user, role: "Counselor" }))
+        ];
+
+        res.status(200).json(users);
+    } catch (error) {
+        console.error("❌ Error fetching users:", error.message);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+});
+
+app.delete('/admin/delete/:role/:id', async (req, res) => {
+    const { role, id } = req.params;
+
+    let collection;
+    switch (role) {
+        case "student":
+            collection = studentsCollection;
+            break;
+        case "recruiter":
+            collection = recruitersCollection;
+            break;
+        case "counselor":
+            collection = counselorsCollection;
+            break;
+        default:
+            return res.status(400).json({ message: "Invalid role" });
+    }
+
+    try {
+        const result = await collection.deleteOne({ _id: new ObjectId(id) });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ message: "User deleted successfully!" });
+    } catch (error) {
+        console.error("❌ Error deleting user:", error.message);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+});
+
+app.get('/admin/user/:role/:id', async (req, res) => {
+    const { role, id } = req.params;
+
+    let collection;
+    switch (role) {
+        case "student":
+            collection = studentsCollection;
+            break;
+        case "recruiter":
+            collection = recruitersCollection;
+            break;
+        case "counselor":
+            collection = counselorsCollection;
+            break;
+        default:
+            return res.status(400).json({ message: "Invalid role" });
+    }
+
+    try {
+        const user = await collection.findOne({ _id: new ObjectId(id) });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json(user);
+    } catch (error) {
+        console.error("❌ Error fetching user details:", error.message);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 });

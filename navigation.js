@@ -34,7 +34,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     if (adminBox) {
         adminBox.addEventListener("click", () => {
-            navigateTo("admin.html");
+            navigateTo("adminSignIn.html");
         });
     }
 

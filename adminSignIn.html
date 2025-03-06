@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Counselor Sign Up</title>
-  <script src="counselorSignUp.js" defer></script>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <title>Admin Sign In</title>
+  <script src="adminSignIn.js" defer></script>
   <style>
     body {
       font-family: 'Roboto', sans-serif;
@@ -27,17 +26,30 @@
       padding: 2rem;
       width: 100%;
       max-width: 400px;
-      text-align: center;
     }
 
-    .auth-title {
-      font-size: 2rem;
-      font-weight: 700;
+    .auth-header {
+      text-align: center;
       margin-bottom: 1.5rem;
+    }
+
+    .auth-header h1 {
+      margin: 0;
+      font-size: 1.5rem;
       color: #007bff;
     }
 
-    .auth-form input, .auth-form select {
+    .auth-title {
+      text-align: center;
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      background: linear-gradient(90deg, #007bff, #ffd700);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .auth-form input {
       width: calc(100% - 24px);
       margin-bottom: 1rem;
       padding: 0.8rem;
@@ -61,6 +73,21 @@
       background-color: #0056b3;
     }
 
+    .auth-switch {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .auth-switch a {
+      color: #007bff;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .auth-switch a:hover {
+      text-decoration: underline;
+    }
+
     .error-message {
       color: #dc3545;
       font-size: 0.9rem;
@@ -70,33 +97,23 @@
   </style>
 </head>
 <body>
+<div class="auth-header">
+  <h1 style="color: #007bff;">Admin</h1>
+  <h1 class="auth-title">Career Compass</h1>
+</div>
 <div class="auth-container">
-  <h1 class="auth-title">Counselor Sign Up</h1>
-  <form class="auth-form" id="signupForm">
+  <div class="auth-header">
+    <h1 id="authTitle">Sign In</h1>
+  </div>
+  <form class="auth-form" id="authForm">
     <div class="error-message" id="errorMessage"></div>
-
-    <select id="userType">
-      <option value="student">Student</option>
-      <option value="counselor">Counselor</option>
-    </select>
-
-    <input type="text" id="company" placeholder="Company Name" style="display: none;">
-
-    <input type="text" id="firstname" placeholder="First Name" required>
-    <input type="text" id="lastname" placeholder="Last Name" required>
-    <input type="text" id="username" placeholder="Username" required>
-    <input type="password" id="password" placeholder="Password" required>
-
-    <input list="majors" id="major" name="major" placeholder="Select or type your major">
-    <datalist id="majors">
-      <option value="None"></option>
-      <option value="Computer Science"></option>
-      <option value="Software Engineering"></option>
-      <option value="Business Administration"></option>
-    </datalist>
-
-    <button type="submit">Sign Up</button>
+    <input type="text" id="username" placeholder="Enter Username" required>
+    <input type="password" id="password" placeholder="Enter Password" required>
+    <button type="submit" id="authButton">Sign In</button>
   </form>
+  <div class="auth-switch">
+    <span id="switchMessage">Don't have an account?</span> <a href="adminSignup.html" id="switchLink">Sign Up</a>
+  </div>
 </div>
 </body>
 </html>
