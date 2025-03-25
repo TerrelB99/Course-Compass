@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (response.ok) {
                 const result = await response.json();
                 alert(`Welcome, Admin ${result.admin.lastname}!`);
-                window.location.href = "admin_dashboard.html";
+                window.location.href = "admin.html";
             } else {
                 const errorText = await response.json();
                 errorMessage.textContent = errorText.message || "Invalid credentials.";

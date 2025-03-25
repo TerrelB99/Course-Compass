@@ -25,6 +25,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <td>${user.username}</td>
                 <td>${user.role}</td>
                 <td>
+                    <button class="action-btn toggle-btn" data-id="${user._id}" data-role="${user.role}">
+                    ${user.active ? "Deactivate" : "Activate"}</button>
                     <button class="action-btn view-btn" data-id="${user._id}" data-role="${user.role}">View</button>
                     <button class="action-btn delete-btn" data-id="${user._id}" data-role="${user.role}">Delete</button>
                 </td>
@@ -52,6 +54,25 @@ document.addEventListener("DOMContentLoaded", async () => {
                 await viewUserDetails(userId, role);
             });
         });
+
+        document.querySelectorAll(".toggle-btn").forEach(button => {
+            button.addEventListener("click", async (event) => {
+                const userId = event.target.getAttribute("data-id");
+                const role = event.target.getAttribute("data-role");
+
+                try {
+                    const res = await fetch(`http://localhost:3000/admin/toggle-status/${role.toLowerCase()}/${userId}`, {
+                        method: "PATCH"
+                    });
+                    const result = await res.json();
+                    alert(result.message);
+                    fetchUsers();
+                } catch (err) {
+                    console.error("Toggle error:", err);
+                }
+            });
+        });
+
     }
 
     async function deleteUser(userId, role) {

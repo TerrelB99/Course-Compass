@@ -3,100 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Sign In</title>
+    <title>Career Compass - Welcome, Admin</title>
     <script src="admin.js" defer></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom right, #4facfe, #ffef96);
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
-            color: #333;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            color: #333333;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .roles {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .role-box {
+            width: 200px;
+            height: 250px;
+            background: #ffffff;
+            border: 1px solid #dddddd;
+            border-radius: 10px;
+            display: flex;
             flex-direction: column;
-        }
-
-        .auth-container {
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .auth-header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .auth-header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-            color: #007bff;
-        }
-
-        .auth-title {
-            text-align: center;
-            font-size: 3.5rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-            background: linear-gradient(90deg, #007bff, #ffd700);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .auth-form input {
-            width: calc(100% - 24px);
-            margin-bottom: 1rem;
-            padding: 0.8rem;
-            font-size: 1rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .auth-form button {
-            width: 100%;
-            padding: 0.8rem;
-            font-size: 1.1rem;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .auth-form button:hover {
+        .role-box:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .role-box img {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
+
+        .role-box p {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .logo {
+            width: 300px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        .logout-popup {
+            position: fixed;
+            top: 20px;
+            left: -300px; /* Start position outside the viewport */
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+            opacity: 0;
+        }
+
+        /* Slide-in effect */
+        .logout-popup.visible {
+            transform: translateX(320px);
+            opacity: 1;
+        }
+
+        /* Slide-out effect */
+        .logout-popup.slide-out {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+
+
+
+        .action-button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .action-button:hover {
             background-color: #0056b3;
-        }
-
-        .error-message {
-            color: #dc3545;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-            text-align: center;
         }
     </style>
 </head>
 <body>
-<div class="auth-header">
-    <h1 style="color: #007bff;">Admin</h1>
-    <h1 class="auth-title">Career Compass</h1>
-</div>
-<div class="auth-container">
-    <div class="auth-header">
-        <h1 id="authTitle">Sign In</h1>
+<div class="container">
+    <img src="https://github.com/BarberS-hop-App99/Fade-Finder/blob/main/sdr.png?raw=true" alt="Career Compass Logo" class="logo">
+    <h1>Please select your account type</h1>
+    <div class="roles">
+        <div class="role-box" id="AstudentBox">
+            <img src="https://cdn-icons-png.flaticon.com/512/16059/16059827.png" alt="Student Icon">
+            <p>Student</p>
+        </div>
+        <div class="role-box" id="ArecruiterBox">
+            <img src="https://cdn-icons-png.flaticon.com/512/10051/10051265.png" alt="Recruiter Icon">
+            <p>Recruiter</p>
+        </div>
+        <div class="role-box" id="AcounselorBox">
+            <img src="https://cdn-icons-png.flaticon.com/512/16059/16059828.png" alt="Recommender Icon">
+            <p>Counselor</p>
+        </div>
     </div>
-    <form class="auth-form" id="authForm">
-        <div class="error-message" id="errorMessage"></div>
-        <input type="text" id="username" placeholder="Enter Username" required>
-        <input type="password" id="password" placeholder="Enter Password" required>
-        <button type="submit" id="authButton">Sign In</button>
-    </form>
+
+    <button id="allUsersButton" class="action-button">All Users</button>
+    <button id="logoutButton" class="action-button">Logout</button>
 </div>
-</body>
-</html>
+

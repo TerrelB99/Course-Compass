@@ -5,6 +5,8 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const bodyParser = require('body-parser');
 const path = require('path');
 
+
+
 const app = express();
 const PORT = 3000;
 
@@ -61,9 +63,12 @@ app.post('/student/signin', async (req, res) => {
         const student = await studentsCollection.findOne({ username });
 
         if (!student || student.password !== password) {
-            console.log(`❌ Invalid credentials for student: ${username}`);
             return res.status(400).json({ message: 'Invalid username or password' });
         }
+        if (student.active === false) {
+            return res.status(403).json({ message: 'Account is deactivated. Contact admin.' });
+        }
+
 
         console.log(`🎉 Student login successful for: ${username}`);
         res.status(200).json({ userType: "student", user: student });
@@ -87,9 +92,12 @@ app.post('/recruiter/signin', async (req, res) => {
         const recruiter = await recruitersCollection.findOne({ username });
 
         if (!recruiter || recruiter.password !== password) {
-            console.log(`❌ Invalid credentials for recruiter: ${username}`);
-            return res.status(400).json({ message: 'Invalid username or password' });
+            return res.status(401).json({ message: "Invalid credentials" });
         }
+        if (recruiter.active === false) {
+            return res.status(403).json({ message: "Account is deactivated. Contact admin." });
+        }
+
 
         console.log(`🎉 Recruiter login successful for: ${username}`);
         res.status(200).json({ userType: "recruiter", user: recruiter });
@@ -227,10 +235,12 @@ app.post('/jobs/:jobID/apply', async (req, res) => {
         };
 
         // Update job applicants list
+// Save application in job
         await jobsCollection.updateOne(
             { jobId: jobID },
             { $push: { applicants: application } }
         );
+
 
         res.status(200).json({ message: "Application submitted successfully!" });
     } catch (error) {
@@ -320,10 +330,13 @@ app.post('/counselor/signin', async (req, res) => {
         console.log(`🔍 Entered password: "${password}"`);
 
         // Ensure the stored password matches exactly with the entered password
-        if (counselor.password !== password) {
-            console.log(`❌ Incorrect password for: ${username}`);
-            return res.status(400).json({ message: 'Invalid username or password' });
+        if (!counselor || counselor.password !== password) {
+            return res.status(401).json({ message: "Invalid credentials" });
         }
+        if (counselor.active === false) {
+            return res.status(403).json({ message: "Account is deactivated. Contact admin." });
+        }
+
 
         console.log(`🎉 Login successful for: ${username}`);
         res.status(200).json({ counselor });
@@ -352,9 +365,9 @@ app.post('/counselor/signup', async (req, res) => {
     try {
         console.log("🔍 Received data:", req.body);
 
-        const { firstname, lastname, username, password, major, company } = req.body;
+        const { firstname, lastname, username, password, major, university } = req.body;
 
-        if (!firstname || !lastname || !username || !password || !major) {
+        if (!firstname || !lastname || !username || !password || !major || !university) {
             console.error("❌ Missing required fields:", req.body);
             return res.status(400).json({ message: "All fields are required" });
         }
@@ -377,7 +390,8 @@ app.post('/counselor/signup', async (req, res) => {
             username,
             password,
             major,
-            company: company || "",
+            active: "true",
+            university,
             createdAt: new Date()
         };
 
@@ -549,6 +563,100 @@ app.get('/admin/user/:role/:id', async (req, res) => {
     } catch (error) {
         console.error("❌ Error fetching user details:", error.message);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+});
+
+app.patch('/admin/toggle-status/:role/:id', async (req, res) => {
+    const { role, id } = req.params;
+    let collection;
+    if (role === "student") collection = studentsCollection;
+    else if (role === "recruiter") collection = recruitersCollection;
+    else if (role === "counselor") collection = database.collection("counselors");
+    else return res.status(400).json({ message: "Invalid role provided." });
+
+
+    try {
+        const user = await collection.findOne({ _id: new ObjectId(id) });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const newStatus = !user.active;
+        await collection.updateOne({ _id: new ObjectId(id) }, { $set: { active: newStatus } });
+
+        res.json({ message: `User account ${newStatus ? "activated" : "deactivated"}`, active: newStatus });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+});
+
+app.get('/counselor/students/matching-university', async (req, res) => {
+    const { university } = req.query;
+
+    if (!university) {
+        return res.status(400).json({ message: "University parameter is required." });
+    }
+
+    try {
+        const matchingStudents = await studentsCollection.find({ university }).toArray();
+        res.status(200).json(matchingStudents);
+    } catch (error) {
+        console.error("❌ Error fetching students by university:", error.message);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+});
+
+app.get('/counselor/students/university-applications', async (req, res) => {
+    const { university } = req.query;
+    const students = await studentsCollection.find({ university }).toArray();
+
+    if (!university) {
+        return res.status(400).json({ message: "University parameter is required." });
+    }
+
+    try {
+        const students = await studentsCollection.find({ university }).toArray();
+        const allJobs = await jobsCollection.find().toArray();
+
+        // Match studentID with job applicants
+        const enrichedStudents = students.map(student => {
+            const studentIdStr = student.studentId.toString();
+
+            const studentApplications = allJobs
+                .filter(job =>
+                    job.applicants?.some(app => app.studentID === studentIdStr)
+                )
+                .map(job => {
+                    const appData = job.applicants.find(app => app.studentID === studentIdStr);
+                    return {
+                        jobTitle: job.jobTitle,
+                        company: job.company,
+                        status: appData?.status || "Pending",
+                        appliedAt: appData?.appliedAt,
+                        email: appData?.email || "N/A",
+                        resume: appData?.resume || null,
+                        skills: appData?.skills || [] // ✅ Include skills array
+                    };
+                });
+
+            return {
+                student: {
+                    _id: student._id,
+                    firstname: student.firstname,
+                    lastname: student.lastname,
+                    username: student.username,
+                    major: student.major,
+                    university: student.university
+                },
+                applications: studentApplications
+            };
+        });
+
+
+
+
+        res.json(enrichedStudents);
+    } catch (error) {
+        console.error("Error fetching student applications:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
     }
 });
 
