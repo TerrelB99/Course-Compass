@@ -13,30 +13,35 @@ function formatMonthAsWords(monthString) {
 }
 
 // Select elements
+const jobTypeInput = document.getElementById('jobType');
 const companyNameInput = document.getElementById('companyName');
-const internshipTitleInput = document.getElementById('internshipTitle');
+const positionInput = document.getElementById('position'); // Fixed from internshipTitleInput
 const applicationDateInput = document.getElementById('applicationDate');
 const expectedToHearBackInput = document.getElementById('expectedToHearBack');
-const addInternshipButton = document.getElementById('addInternshipButton');
-const internshipTable = document.getElementById('internshipTable').querySelector('tbody');
+const addJobButton = document.getElementById('addJobButton'); // Fixed button ID
+const jobTable = document.getElementById('jobTable').querySelector('tbody'); // Fixed table ID
 
-// Add internship to the tracker
-addInternshipButton.addEventListener('click', () => {
+// Add job to the tracker
+addJobButton.addEventListener('click', () => {
+    const jobType = jobTypeInput.value;
     const companyName = companyNameInput.value.trim();
-    const internshipTitle = internshipTitleInput.value.trim();
+    const position = positionInput.value.trim();
     const applicationDate = applicationDateInput.value;
     const expectedToHearBack = expectedToHearBackInput.value;
 
-    if (companyName && internshipTitle && applicationDate && expectedToHearBack) {
+    if (companyName && position && applicationDate && expectedToHearBack) {
         // Create a new row
         const row = document.createElement('tr');
 
         // Add columns to the row
+        const jobTypeCell = document.createElement('td');
+        jobTypeCell.textContent = jobType;
+
         const companyCell = document.createElement('td');
         companyCell.textContent = companyName;
 
-        const titleCell = document.createElement('td');
-        titleCell.textContent = internshipTitle;
+        const positionCell = document.createElement('td');
+        positionCell.textContent = position;
 
         const dateCell = document.createElement('td');
         dateCell.textContent = formatDateAsWords(applicationDate);
@@ -51,6 +56,8 @@ addInternshipButton.addEventListener('click', () => {
         const yesButton = document.createElement('button');
         yesButton.className = 'status-button yes';
         yesButton.textContent = 'Yes';
+        yesButton.style.backgroundColor = '#28a745';
+        yesButton.style.color = '#fff';
         yesButton.addEventListener('click', () => {
             statusCell.textContent = 'Offered';
             statusCell.style.color = '#28a745';
@@ -60,6 +67,8 @@ addInternshipButton.addEventListener('click', () => {
         const noButton = document.createElement('button');
         noButton.className = 'status-button no';
         noButton.textContent = 'No';
+        noButton.style.backgroundColor = '#dc3545';
+        noButton.style.color = '#fff';
         noButton.addEventListener('click', () => {
             statusCell.textContent = 'No Offer';
             statusCell.style.color = '#dc3545';
@@ -71,18 +80,19 @@ addInternshipButton.addEventListener('click', () => {
         statusCell.appendChild(statusButtons);
 
         // Append cells to the row
+        row.appendChild(jobTypeCell);
         row.appendChild(companyCell);
-        row.appendChild(titleCell);
+        row.appendChild(positionCell);
         row.appendChild(dateCell);
         row.appendChild(expectedCell);
         row.appendChild(statusCell);
 
         // Add the row to the table
-        internshipTable.appendChild(row);
+        jobTable.appendChild(row);
 
         // Clear input fields
         companyNameInput.value = '';
-        internshipTitleInput.value = '';
+        positionInput.value = '';
         applicationDateInput.value = '';
         expectedToHearBackInput.value = '';
     }

@@ -13,10 +13,17 @@ window.addEventListener('DOMContentLoaded', () => {
     const adminBox = document.getElementById("adminBox");
     const AdminStudentBox = document.getElementById("AdminStudentBox");
     const AdminRecruiterBox = document.getElementById("AdminRecruiterBox");
+    const counselorBox = document.getElementById("counselorBox");
 
     if(AdminRecruiterBox){
         AdminRecruiterBox.addEventListener("click", () =>{
             navigateTo("AdminR_dashboard.html");
+        });
+    }
+
+    if(counselorBox){
+        counselorBox.addEventListener("click", () =>{
+            navigateTo("counselorSignIn.html");
         });
     }
 
@@ -28,7 +35,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     if (adminBox) {
         adminBox.addEventListener("click", () => {
-            navigateTo("admin.html");
+            navigateTo("adminSignIn.html");
         });
     }
 

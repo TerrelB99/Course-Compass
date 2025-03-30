@@ -15,9 +15,10 @@ async function fetchJobs() {
     try {
         const response = await fetch("/jobs");
         const jobs = await response.json();
-        const jobCardsContainer = document.getElementById("jobCards");
 
-        jobCardsContainer.innerHTML = ""; // Clear existing jobs
+        const jobCardsContainer = document.getElementById("jobCards");
+        jobCardsContainer.innerHTML = "";
+
         jobs.forEach(job => {
             const jobCard = document.createElement("div");
             jobCard.classList.add("card");
@@ -31,7 +32,8 @@ async function fetchJobs() {
                     <p><strong>Skills Required:</strong> ${job.skillsRequired.join(", ")}</p>
                 </div>
                 <div class="card-footer">
-                    <button onclick="openApplicationModal('${job.jobId}')">Apply Now</button>
+                  <button onclick="openApplicationModal('${job._id}')">Apply Now</button>
+
                 </div>
             `;
             jobCardsContainer.appendChild(jobCard);
@@ -48,6 +50,14 @@ function openApplicationModal(jobId) {
 
 async function submitApplication() {
     const jobID = document.getElementById("applicationForm").dataset.jobId;
+    const student = JSON.parse(sessionStorage.getItem("student"));
+
+
+    if (!student || !jobID) {
+        alert("Missing student or job ID.");
+        return;
+    }
+
     const firstName = document.getElementById("firstName").value.trim();
     const lastName = document.getElementById("lastName").value.trim();
     const email = document.getElementById("email").value.trim();
@@ -57,17 +67,15 @@ async function submitApplication() {
     const resumeFile = document.getElementById("resume").files[0];
 
     if (!firstName || !lastName || !email || !phoneNumber || !skills || !address) {
-        alert("All fields except Resume are required!");
+        alert("All fields except resume are required.");
         return;
     }
 
     let resumeBase64 = "";
-    if (resumeFile) {
-        resumeBase64 = await toBase64(resumeFile);
-    }
+    if (resumeFile) resumeBase64 = await toBase64(resumeFile);
 
     const applicationData = {
-        studentID: "98393b",  // Change this dynamically based on logged-in student
+        studentID: student._id,
         firstName,
         lastName,
         email,
@@ -77,23 +85,18 @@ async function submitApplication() {
         resume: resumeBase64
     };
 
-    try {
-        const response = await fetch(`/jobs/${jobID}/apply`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(applicationData)
-        });
+    const response = await fetch(`/jobs/${jobID}/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(applicationData)
+    });
 
-        const result = await response.json();
-        if (response.ok) {
-            alert("Application submitted successfully!");
-            document.getElementById("applicationModal").style.display = "none";
-        } else {
-            alert(`Error: ${result.message}`);
-        }
-    } catch (error) {
-        console.error("Error submitting application:", error);
-        alert("Failed to submit application.");
+    const result = await response.json();
+    if (response.ok) {
+        alert("Application submitted successfully!");
+        document.getElementById("applicationModal").style.display = "none";
+    } else {
+        alert("Error: " + result.message);
     }
 }
 

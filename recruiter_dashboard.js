@@ -5,7 +5,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     const postJobForm = document.getElementById("postJobForm");
     const addJobBtn = document.getElementById("add-job");
 
-    const recruiter = JSON.parse(sessionStorage.getItem("recruiter"));
+    const recruiterSession = sessionStorage.getItem("recruiter");
+    const recruiter = recruiterSession ? JSON.parse(recruiterSession).user : null;
+
     if (!recruiter) {
         alert("You need to log in as a recruiter.");
         return;
@@ -29,8 +31,8 @@ document.addEventListener("DOMContentLoaded", async function () {
                         <p><strong>Description:</strong> ${job.description}</p>
                     </div>
                     <div class="card-footer">
-                        <button class="blue-btn view-applicants" data-job-id="${job.jobId}">View Applicants</button>
-                        <button class="red-btn delete-job" data-job-id="${job.jobId}">Delete Job</button>
+                        <button class="blue-btn view-applicants" data-job-id="${job._id}">View Applicants</button>
+                        <button class="red-btn delete-job" data-job-id="${job._id}">Delete Job</button>
                     </div>
                 `;
                 jobList.appendChild(jobCard);
@@ -47,28 +49,21 @@ document.addEventListener("DOMContentLoaded", async function () {
                 button.addEventListener("click", async (event) => {
                     const jobId = event.target.getAttribute("data-job-id");
                     if (confirm("Are you sure you want to delete this job?")) {
-                        try {
-                            const response = await fetch(`/jobs/${jobId}`, {
-                                method: "DELETE",
-                                headers: { "Content-Type": "application/json" }
-                            });
+                        const response = await fetch(`/jobs/${jobId}`, {
+                            method: "DELETE",
+                            headers: { "Content-Type": "application/json" }
+                        });
 
-                            const result = await response.json();
-
-                            if (response.ok) {
-                                alert(result.message);
-                                fetchJobs(); // Refresh job list
-                            } else {
-                                console.error("Error deleting job:", result.message);
-                                alert("Error deleting job: " + result.message);
-                            }
-                        } catch (error) {
-                            console.error("Error deleting job:", error);
+                        const result = await response.json();
+                        if (response.ok) {
+                            alert(result.message);
+                            fetchJobs();
+                        } else {
+                            alert("Error deleting job: " + result.message);
                         }
                     }
                 });
             });
-
 
         } catch (error) {
             console.error("Error fetching jobs:", error);
@@ -85,24 +80,31 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     postJobForm.addEventListener("submit", async function (e) {
         e.preventDefault();
+
         const newJob = {
-            jobTitle: document.getElementById("jobTitle").value,
-            company: document.getElementById("company").value,
-            location: document.getElementById("location").value,
-            salary: document.getElementById("salary").value,
-            description: document.getElementById("description").value,
-            skillsRequired: document.getElementById("skillsRequired").value.split(','),
+            jobTitle: document.getElementById("jobTitle").value.trim(),
+            company: document.getElementById("company").value.trim(),
+            location: document.getElementById("location").value.trim(),
+            salary: document.getElementById("salary").value.trim(),
+            description: document.getElementById("description").value.trim(),
+            skillsRequired: document.getElementById("skillsRequired").value.split(',').map(skill => skill.trim()),
             recruiterID: recruiter._id
         };
 
-        await fetch("/jobs", {
+        const response = await fetch("/jobs", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(newJob)
         });
 
-        postJobModal.style.display = "none";
-        fetchJobs();
+        const result = await response.json();
+        if (response.ok) {
+            alert("Job posted successfully!");
+            postJobModal.style.display = "none";
+            fetchJobs();
+        } else {
+            alert("Error: " + result.message);
+        }
     });
 
     fetchJobs();
