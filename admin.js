@@ -1,27 +1,44 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const authForm = document.getElementById("authForm");
-    const errorMessage = document.getElementById("errorMessage");
+    const allUsersButton = document.getElementById("allUsersButton");
+    const logoutButton = document.getElementById("logoutButton");
 
-    authForm.addEventListener("submit", (e) => {
-        e.preventDefault();
+    if (allUsersButton) {
+        allUsersButton.addEventListener("click", () => {
+            window.location.href = "admin_dashboard.html"; // Redirect to All Users page
+        });
+    }
 
-        const username = document.getElementById("username").value.trim();
-        const password = document.getElementById("password").value.trim();
-
-        const hardcodedUsername = "adm1n4@career.compass.net";
-        const hardcodedPassword = "CJ+MKd3a&AtqhY##";
-
-        if (!username || !password) {
-            errorMessage.textContent = "Both fields are required!";
-            return;
-        }
-
-        if (username === hardcodedUsername && password === hardcodedPassword) {
-            alert("Welcome, Admin!");
-            // Redirect to admin dashboard
-            window.location.href = "admin_dashboard.html";
-        } else {
-            errorMessage.textContent = "Invalid credentials. Please try again.";
-        }
-    });
+    if (logoutButton) {
+        logoutButton.addEventListener("click", () => {
+            showLogoutPopup();
+            setTimeout(() => {
+                window.location.href = "welcome.html"; // Redirect after message disappears
+            }, 2000);
+        });
+    }
 });
+
+function showLogoutPopup() {
+    // Remove existing popups (prevents duplicates)
+    const existingPopup = document.querySelector(".logout-popup");
+    if (existingPopup) {
+        existingPopup.remove();
+    }
+
+    // Create the pop-up div
+    const popup = document.createElement("div");
+    popup.textContent = "Logging Out... See you soon!";
+    popup.className = "logout-popup";
+    document.body.appendChild(popup);
+
+    // Force reflow to apply animation properly
+    setTimeout(() => {
+        popup.classList.add("visible");
+    }, 10);
+
+    // Start slide-out after 1.5s
+    setTimeout(() => {
+        popup.classList.add("slide-out");
+        setTimeout(() => popup.remove(), 500);
+    }, 1500);
+}

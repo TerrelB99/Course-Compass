@@ -3,99 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Career Compass - Admin Dashboard</title>
-    <script src="navigation.js" defer></script>
+    <title>Admin Dashboard</title>
+    <script src="adminDashboard.js" defer></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(to bottom right, #4facfe, #ffef96);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            color: #333333;
+            margin: 20px;
+            background-color: #f5f5f5;
         }
-
-        .container {
-            text-align: center;
-            max-width: 800px;
-            width: 90%;
-        }
-
         h1 {
-            font-size: 2em;
+            text-align: center;
+            color: #333;
+        }
+        .search-box {
             margin-bottom: 20px;
+            text-align: center;
         }
-
-        .roles {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 20px;
+        input {
+            width: 60%;
+            padding: 10px;
+            font-size: 16px;
         }
-
-        .role-box {
-            width: 180px;
-            height: 230px;
-            background: #ffffff;
-            border: 1px solid #dddddd;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .action-btn {
+            padding: 6px 10px;
+            border: none;
             cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            color: white;
+            margin-right: 5px;
         }
-
-        .role-box:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        .delete-btn {
+            background-color: #dc3545;
         }
-
-        .role-box img {
-            width: 70px;
-            height: 70px;
-            margin-bottom: 10px;
+        .delete-btn:hover {
+            background-color: #c82333;
         }
-
-        .role-box p {
-            font-size: 1em;
+        .view-btn {
+            background-color: #28a745;
+        }
+        .view-btn:hover {
+            background-color: #218838;
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 40%;
+            text-align: center;
+            border-radius: 5px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
             font-weight: bold;
-            margin: 0;
+            cursor: pointer;
         }
-
-        .logo {
-            width: 250px;
-            height: auto;
-            margin-bottom: 20px;
+        .close:hover {
+            color: black;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <img src="https://github.com/BarberS-hop-App99/Fade-Finder/blob/main/sdr.png?raw=true" alt="Career Compass Logo" class="logo">
-    <h1>Admin Dashboard</h1>
-    <div class="roles">
-        <div class="role-box" id="AdminStudentBox">
-            <img src="https://cdn-icons-png.flaticon.com/512/16059/16059827.png" alt="Student Icon">
-            <p>Manage Students</p>
-        </div>
-        <div class="role-box" id="AdminRecruiterBox">
-            <img src="https://cdn-icons-png.flaticon.com/512/10051/10051265.png" alt="Recruiter Icon">
-            <p>Manage Recruiters</p>
-        </div>
-        <div class="role-box" id="AdminCounselorBox">
-            <img src="https://cdn-icons-png.flaticon.com/512/16059/16059828.png" alt="Counselor Icon">
-            <p>Manage Counselors</p>
-        </div>
-        <div class="role-box" id="AllAdminBox">
-            <img src="https://cdn-icons-png.flaticon.com/512/709/709699.png" alt="All Users Icon">
-            <p>Manage All</p>
-        </div>
+
+<h1>Admin Dashboard</h1>
+
+<div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search users by name or username...">
+</div>
+
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Username</th>
+        <th>Role</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody id="userTableBody">
+    <!-- Data will be injected here by JavaScript -->
+    </tbody>
+</table>
+
+<!-- Modal for User Details -->
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>User Details</h2>
+        <p id="userDetails"></p>
     </div>
 </div>
+<a href="admin.html" style="
+    display: block;
+    margin: 30px auto 0;
+    width: fit-content;
+    background-color: #6c757d;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 1rem;
+    text-align: center;
+    cursor: pointer;
+">
+    ⬅️ Back to Admin Home
+</a>
+
 </body>
 </html>
