@@ -1,8 +1,11 @@
+const { v4: uuidv4 } = require('uuid');
 const express = require('express');
 const router = express.Router(); // ✅ Fix: Define the router
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const bodyParser = require('body-parser');
 const path = require('path');
+const bcrypt = require('bcrypt');
+
 
 const app = express();
 const PORT = 3000;
@@ -31,15 +34,31 @@ async function connectDB() {
     try {
         await client.connect();
         database = client.db("CourseCompass");
+
         studentsCollection = database.collection("students");
         recruitersCollection = database.collection("recruiters");
         jobsCollection = database.collection("jobs");
         messagesCollection = database.collection("messages");
+        adminsCollection = database.collection("admins");
+        counselorsCollection = database.collection("counselors"); // ✅ Add this line
+
         console.log("✅ Successfully connected to MongoDB!");
     } catch (error) {
         console.error("❌ MongoDB Connection Error:", error.message);
     }
 }
+
+
+async function isUsernameTaken(username) {
+    const collections = [studentsCollection, recruitersCollection, counselorsCollection, adminsCollection];
+    for (const col of collections) {
+        const existing = await col.findOne({ username });
+        if (existing) return true;
+    }
+    return false;
+}
+
+
 connectDB();
 
 // Serve the login page
@@ -81,9 +100,8 @@ app.post("/student/signup", async (req, res) => {
             return res.status(400).json({ message: "All fields are required." });
         }
 
-        const existing = await studentsCollection.findOne({ username });
-        if (existing) {
-            return res.status(409).json({ message: "Username already exists." });
+        if (await isUsernameTaken(username)) {
+            return res.status(409).json({ message: "Username already exists across roles." });
         }
 
         const newStudent = {
@@ -94,7 +112,8 @@ app.post("/student/signup", async (req, res) => {
             password,
             university,
             appliedJobs: [],
-            isActive: true
+            isActive: true,
+            createdAt: new Date(),
         };
 
         const result = await studentsCollection.insertOne(newStudent);
@@ -145,9 +164,8 @@ app.post("/recruiter/signup", async (req, res) => {
             return res.status(400).json({ message: "All fields are required." });
         }
 
-        const existing = await recruitersCollection.findOne({ username });
-        if (existing) {
-            return res.status(409).json({ message: "Username already exists." });
+        if (await isUsernameTaken(username)) {
+            return res.status(409).json({ message: "Username already exists across roles." });
         }
 
         const newRecruiter = {
@@ -158,7 +176,8 @@ app.post("/recruiter/signup", async (req, res) => {
             password,
             company,
             jobsPosted: [],
-            isActive: true
+            isActive: true,
+            createdAt: new Date()
         };
 
         const result = await recruitersCollection.insertOne(newRecruiter);
@@ -377,7 +396,7 @@ app.get('/messages/:userId', async (req, res) => {
 app.get('/jobs/:jobId/applicants', async (req, res) => {
     try {
         const { jobId } = req.params;
-        const job = await jobsCollection.findOne({ _id: new ObjectId(jobID) });
+        const job = await jobsCollection.findOne({ _id: new ObjectId(jobId) });
 
 
         if (!job) {
@@ -461,9 +480,8 @@ app.post('/counselor/signup', async (req, res) => {
             return res.status(500).json({ message: "Database connection error" });
         }
 
-        const existingCounselor = await counselorsCollection.findOne({ username });
-        if (existingCounselor) {
-            return res.status(400).json({ message: "Username already exists" });
+        if (await isUsernameTaken(username)) {
+            return res.status(400).json({ message: "Username already exists across roles" });
         }
 
 
@@ -474,7 +492,7 @@ app.post('/counselor/signup', async (req, res) => {
             username,
             password,
             major,
-            active: "true",
+            isActive: true,
             university,
             createdAt: new Date()
         };
@@ -504,9 +522,8 @@ app.post('/admin/signup', async (req, res) => {
             return res.status(500).json({ message: "Database connection error" });
         }
 
-        const existingAdmin = await adminsCollection.findOne({ username });
-        if (existingAdmin) {
-            return res.status(400).json({ message: "Username already exists" });
+        if (await isUsernameTaken(username)) {
+            return res.status(400).json({ message: "Username already exists across roles" });
         }
 
         // ✅ Hash the password before saving it
@@ -518,7 +535,8 @@ app.post('/admin/signup', async (req, res) => {
             lastname,
             username,
             password: hashedPassword, // ✅ Store hashed password
-            createdAt: new Date()
+            createdAt: new Date(),
+            isActive: true
         };
 
         await adminsCollection.insertOne(newAdmin);

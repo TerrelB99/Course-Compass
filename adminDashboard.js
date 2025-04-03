@@ -21,12 +21,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         users.forEach(user => {
             const row = document.createElement("tr");
             row.innerHTML = `
-                <td>${user.firstname} ${user.lastname}</td>
+                <td>${user.firstName} ${user.lastName}</td>
                 <td>${user.username}</td>
                 <td>${user.role}</td>
                 <td>
                     <button class="action-btn toggle-btn" data-id="${user._id}" data-role="${user.role}">
-                    ${user.active ? "Deactivate" : "Activate"}</button>
+                    ${user.isActive ? "Deactivate" : "Activate"}</button>
                     <button class="action-btn view-btn" data-id="${user._id}" data-role="${user.role}">View</button>
                     <button class="action-btn delete-btn" data-id="${user._id}" data-role="${user.role}">Delete</button>
                 </td>
@@ -99,16 +99,37 @@ document.addEventListener("DOMContentLoaded", async () => {
             const user = await response.json();
 
             if (user) {
+                // Attach the role to the user object (since it’s not in the DB)
+                user.role = role;
+
+                const first = user.firstname || user.firstName || "";
+                const last = user.lastname || user.lastName || "";
+                const createdAt = user.createdAt ? new Date(user.createdAt).toLocaleString() : "N/A";
+
+// Determine role-specific fields
+                let extraInfo = "";
+                if (role === "Recruiter") {
+                    extraInfo = `<strong>Company:</strong> ${user.company || "N/A"}<br>`;
+                } else if (role === "Student") {
+                    extraInfo = `<strong>University:</strong> ${user.university || "N/A"}<br>`;
+                } else if (role === "Counselor") {
+                    extraInfo = `
+        <strong>University:</strong> ${user.university || "N/A"}<br>
+        <strong>Major:</strong> ${user.major || "N/A"}<br>
+    `;
+                }
+
                 userDetails.innerHTML = `
-                    <strong>Name:</strong> ${user.firstname} ${user.lastname}<br>
-                    <strong>Username:</strong> ${user.username}<br>
-                    <strong>Role:</strong> ${user.role}<br>
-                    <strong>Email:</strong> ${user.email || "N/A"}<br>
-                    <strong>Company (if applicable):</strong> ${user.company || "N/A"}<br>
-                    <strong>Created At:</strong> ${new Date(user.createdAt).toLocaleString()}
-                `;
+    <strong>Name:</strong> ${first} ${last}<br>
+    <strong>Username:</strong> ${user.username}<br>
+    <strong>Role:</strong> ${user.role}<br>
+    <strong>Email:</strong> ${user.email || "N/A"}<br>
+    ${extraInfo}
+    <strong>Created At:</strong> ${createdAt}
+`;
 
                 userModal.style.display = "block";
+
             } else {
                 alert("User details not found.");
             }
@@ -116,6 +137,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.error("❌ Error fetching user details:", error);
         }
     }
+
 
     closeModal.addEventListener("click", () => {
         userModal.style.display = "none";

@@ -75,17 +75,12 @@
   <form class="auth-form" id="signupForm">
     <div class="error-message" id="errorMessage"></div>
 
-    <select id="userType">
-      <option value="student">Student</option>
-      <option value="counselor">Counselor</option>
-    </select>
-
-    <input type="text" id="university" placeholder="University Name" style="display: none;">
 
     <input type="text" id="firstname" placeholder="First Name" required>
     <input type="text" id="lastname" placeholder="Last Name" required>
     <input type="text" id="username" placeholder="Username" required>
     <input type="password" id="password" placeholder="Password" required>
+    <input type="text" id="university" placeholder="University Name" required>
 
     <input list="majors" id="major" name="major" placeholder="Select or type your major">
     <datalist id="majors">

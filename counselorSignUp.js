@@ -1,23 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
     const signupForm = document.getElementById("signupForm");
-    const userType = document.getElementById("userType");
-    const companyField = document.getElementById("company");
     const errorMessage = document.getElementById("errorMessage");
 
-    if (!signupForm || !userType || !companyField || !errorMessage) {
-        console.error("One or more elements not found in the DOM.");
+    if (!signupForm || !errorMessage) {
+        console.error("Form or error message element not found.");
         return;
     }
-
-    userType.addEventListener("change", () => {
-        if (userType.value === "counselor") {
-            companyField.style.display = "block";
-            companyField.setAttribute("required", "required");
-        } else {
-            companyField.style.display = "none";
-            companyField.removeAttribute("required");
-        }
-    });
 
     signupForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -26,9 +14,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const lastname = document.getElementById("lastname")?.value.trim();
         const username = document.getElementById("username")?.value.trim();
         const password = document.getElementById("password")?.value.trim();
+        const university = document.getElementById("university")?.value.trim();
         const major = document.getElementById("major")?.value.trim() || "None";
 
-        if (!firstname || !lastname || !username || !password || !major) {
+        if (!firstname || !lastname || !username || !password || !major || !university) {
             errorMessage.textContent = "All fields are required!";
             return;
         }
@@ -37,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch("http://localhost:3000/counselor/signup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ firstname, lastname, username, password, major }),
+                body: JSON.stringify({ firstname, lastname, username, password, major, university }),
             });
 
             if (response.ok) {
