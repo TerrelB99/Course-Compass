@@ -16,6 +16,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }, 2000);
         });
     }
+    const recruiterBox = document.getElementById("ArecruiterBox");
+    if (recruiterBox) {
+        recruiterBox.addEventListener("click", () => {
+            window.location.href = "AdminR_dashboard.html";
+        });
+    }
+
 });
 
 function showLogoutPopup() {

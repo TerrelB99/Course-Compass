@@ -3,92 +3,94 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Job Dashboard</title>
-  <script src="AdminR_dashboard.js" defer></script>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <title>Admin Job Moderation</title>
+  <script src="adminMod.js" defer></script>
   <style>
     body {
-      font-family: 'Roboto', sans-serif;
-      background-color: #f5f5f5;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
       margin: 0;
-      padding: 0;
-    }
-    .dashboard-container {
-      max-width: 1200px;
-      margin: 0 auto;
       padding: 20px;
     }
+
     h1 {
-      color: #007bff;
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
     }
+
+    #pending-jobs {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
     .job-card {
-      background: white;
+      background-color: #fff;
       border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      padding: 15px;
-      margin-bottom: 20px;
-    }
-    .job-header {
-      font-size: 1.2rem;
-      font-weight: bold;
-    }
-    .job-actions {
-      margin-top: 10px;
-    }
-    button {
-      padding: 10px;
-      border: none;
-      cursor: pointer;
-      margin-right: 10px;
-      border-radius: 5px;
-    }
-    .view-applicants {
-      background: #007bff;
-      color: white;
-    }
-    .delete-job {
-      background: #dc3545;
-      color: white;
-    }
-    #applicants-modal {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       padding: 20px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      border-radius: 8px;
-      z-index: 1000;
-      width: 400px;
     }
-    #modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
+
+    .job-card h3 {
+      color: #007bff;
+      margin-top: 0;
+    }
+
+    .btn-group {
+      margin-top: 15px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .btn-group button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .approve-btn {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .approve-btn:hover {
+      background-color: #218838;
+    }
+
+    .reject-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .reject-btn:hover {
+      background-color: #c82333;
     }
   </style>
 </head>
 <body>
-<div class="dashboard-container">
-  <h1>Admin Job Dashboard</h1>
-  <div id="job-list"></div>
+
+<h1>Admin Job Moderation</h1>
+<div id="pending-jobs">
+  <!-- Dynamic content goes here -->
 </div>
 
-<!-- Modal Overlay -->
-<div id="modal-overlay"></div>
+<a href="admin.html" style="
+    display: block;
+    margin: 30px auto 0;
+    width: fit-content;
+    background-color: #6c757d;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 1rem;
+    text-align: center;
+    cursor: pointer;">
+  ⬅️ Back to Admin Home
+</a>
 
-<!-- View Applicants Modal -->
-<div id="applicants-modal">
-  <h2>Applicants</h2>
-  <ul id="applicant-list"></ul>
-  <button id="close-modal" class="delete-job">Close</button>
-</div>
 </body>
 </html>

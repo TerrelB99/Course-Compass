@@ -32,8 +32,9 @@ function loadStudentApplications() {
                 appList += `
                     <li>
                         <strong>${app.jobTitle}</strong> - ${app.status}
-                        <button style="background-color:#007bff; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.9rem; transition:background-color 0.2s ease;" style='margin-right: 8px;' onmouseover="this.style.backgroundColor='#0056b3'" onmouseout="this.style.backgroundColor='#007bff'" onclick="toggleDetails('${detailId}')">🔽</button>
-                        <button style="background-color:#007bff; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.9rem; transition:background-color 0.2s ease;" style='margin-left: 8px;' onmouseover="this.style.backgroundColor='#0056b3'" onmouseout="this.style.backgroundColor='#007bff'" onclick="window.location.href='${mailtoLink}'">📧</button>
+                       <button style="..." onclick="toggleDetails('${detailId}')">🔽</button>
+                       <button style="..." onclick="window.location.href='${mailtoLink}'">📧</button>
+                       <button style="background-color:#28a745; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.9rem;" onmouseover="this.style.backgroundColor='#218838'" onmouseout="this.style.backgroundColor='#28a745'" onclick="window.open('viewapplicants.html?jobId=${app.jobId}', '_blank')">🔍</button>
                         <div id="${detailId}" style="display:none; margin-top: 0.5rem;">
                             <strong>Email:</strong> ${app.email}<br/>
                             ${app.skills?.length ? `<strong>Skills:</strong> ${app.skills.join(", ")}<br/>` : ""}

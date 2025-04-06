@@ -215,8 +215,10 @@ app.post('/jobs', async (req, res) => {
                 : skillsRequired.split(',').map(skill => skill.trim()),
             recruiterID,
             postedDate: new Date(),
-            applicants: []
+            applicants: [],
+            approved: false  // 🔒 default to not approved
         };
+
 
         const result = await jobsCollection.insertOne(newJob);
         const insertedId = result.insertedId;
@@ -247,12 +249,12 @@ app.delete('/jobs/:jobId', async (req, res) => {
         console.log(`Deleting job with ID: ${jobId}`);
 
         // Check if job exists before deleting
-        const jobExists = await jobsCollection.findOne({ jobId });
+        const jobExists = await jobsCollection.findOne({ _id: new ObjectId(jobId) });
         if (!jobExists) {
             return res.status(404).json({ message: "Job not found." });
         }
 
-        const deleteResult = await jobsCollection.deleteOne({ jobId });
+        const deleteResult = await jobsCollection.deleteOne({ _id: new ObjectId(jobId) });
 
         if (deleteResult.deletedCount === 1) {
             console.log("Job deleted successfully.");
@@ -272,12 +274,13 @@ app.delete('/jobs/:jobId', async (req, res) => {
 // ✅ Get All Jobs (Visible to Students)
 app.get('/jobs', async (req, res) => {
     try {
-        const jobs = await jobsCollection.find().toArray();
+        const jobs = await jobsCollection.find({ approved: true }).toArray();
         res.status(200).json(jobs);
     } catch (error) {
         res.status(500).json({ message: "Error fetching jobs", error: error.message });
     }
 });
+
 
 // ✅ Get Jobs Posted by Specific Recruiter
 app.get('/jobs/recruiter/:recruiterID', async (req, res) => {
@@ -468,9 +471,9 @@ app.post('/counselor/signup', async (req, res) => {
     try {
         console.log("🔍 Received data:", req.body);
 
-        const { firstname, lastname, username, password, major, university } = req.body;
+        const { firstName, lastName, username, password, major, university } = req.body;
 
-        if (!firstname || !lastname || !username || !password || !major || !university) {
+        if (!firstName || !lastName || !username || !password || !major || !university) {
             console.error("❌ Missing required fields:", req.body);
             return res.status(400).json({ message: "All fields are required" });
         }
@@ -487,8 +490,8 @@ app.post('/counselor/signup', async (req, res) => {
 
         // Create the counselor object (without counselorId)
         const newCounselor = {
-            firstname,
-            lastname,
+            firstName,
+            lastName,
             username,
             password,
             major,
@@ -510,9 +513,9 @@ app.post('/admin/signup', async (req, res) => {
     try {
         console.log("🔍 Received data:", req.body);
 
-        const { firstname, lastname, username, password } = req.body;
+        const { firstName, lastName, username, password } = req.body;
 
-        if (!firstname || !lastname || !username || !password) {
+        if (!firstName || !lastName || !username || !password) {
             console.error("❌ Missing required fields:", req.body);
             return res.status(400).json({ message: "All fields are required" });
         }
@@ -531,8 +534,8 @@ app.post('/admin/signup', async (req, res) => {
 
         // Create a new admin document
         const newAdmin = {
-            firstname,
-            lastname,
+            firstName,
+            lastName,
             username,
             password: hashedPassword, // ✅ Store hashed password
             createdAt: new Date(),
@@ -668,6 +671,31 @@ app.get('/admin/user/:role/:id', async (req, res) => {
     }
 });
 
+app.patch('/admin/jobs/:jobId/approve', async (req, res) => {
+    try {
+        const { jobId } = req.params;
+        const { approved, reviewed } = req.body;
+
+        const update = { approved: approved === true };
+        if (reviewed !== undefined) update.reviewed = reviewed;
+
+        const result = await jobsCollection.updateOne(
+            { _id: new ObjectId(jobId) },
+            { $set: update }
+        );
+
+        if (result.modifiedCount === 1) {
+
+            res.json({ message: approved ? "✅ Job approved." : "❌ Job unapproved." });
+        } else {
+            res.status(404).json({ message: "Job not found or no change applied." });
+        }
+    } catch (error) {
+        console.error("Error approving job:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+});
+
 app.patch('/admin/toggle-status/:role/:id', async (req, res) => {
     const { role, id } = req.params;
     let collection;
@@ -690,6 +718,17 @@ app.patch('/admin/toggle-status/:role/:id', async (req, res) => {
     }
 });
 
+app.get('/admin/jobs/all', async (req, res) => {
+    try {
+        const allJobs = await jobsCollection.find().toArray();
+        res.status(200).json(allJobs);
+    } catch (error) {
+        console.error("❌ Error fetching all jobs for admin:", error.message);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+});
+
+
 app.get('/counselor/students/matching-university', async (req, res) => {
     const { university } = req.query;
 
@@ -708,7 +747,6 @@ app.get('/counselor/students/matching-university', async (req, res) => {
 
 app.get('/counselor/students/university-applications', async (req, res) => {
     const { university } = req.query;
-    const students = await studentsCollection.find({ university }).toArray();
 
     if (!university) {
         return res.status(400).json({ message: "University parameter is required." });
@@ -720,7 +758,7 @@ app.get('/counselor/students/university-applications', async (req, res) => {
 
         // Match studentID with job applicants
         const enrichedStudents = students.map(student => {
-            const studentIdStr = student.studentId.toString();
+            const studentIdStr = student._id.toString();
 
             const studentApplications = allJobs
                 .filter(job =>
@@ -731,19 +769,20 @@ app.get('/counselor/students/university-applications', async (req, res) => {
                     return {
                         jobTitle: job.jobTitle,
                         company: job.company,
+                        jobId: job.jobId, // ✅ include jobId so counselor UI can link to applicants
                         status: appData?.status || "Pending",
                         appliedAt: appData?.appliedAt,
                         email: appData?.email || "N/A",
                         resume: appData?.resume || null,
-                        skills: appData?.skills || [] // ✅ Include skills array
+                        skills: appData?.skills || []
                     };
                 });
 
             return {
                 student: {
                     _id: student._id,
-                    firstname: student.firstname,
-                    lastname: student.lastname,
+                    firstname: student.firstName,
+                    lastname: student.lastName,
                     username: student.username,
                     major: student.major,
                     university: student.university

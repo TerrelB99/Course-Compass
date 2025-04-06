@@ -10,14 +10,14 @@ document.addEventListener("DOMContentLoaded", () => {
     signupForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const firstname = document.getElementById("firstname")?.value.trim();
-        const lastname = document.getElementById("lastname")?.value.trim();
-        const username = document.getElementById("username")?.value.trim();
+        const firstName = document.getElementById("firstname")?.value.trim();
+        const lastName = document.getElementById("lastName")?.value.trim();
+        const username = document.getElementById("userName")?.value.trim();
         const password = document.getElementById("password")?.value.trim();
         const university = document.getElementById("university")?.value.trim();
         const major = document.getElementById("major")?.value.trim() || "None";
 
-        if (!firstname || !lastname || !username || !password || !major || !university) {
+        if (!firstName || !lastName || !username || !password || !major || !university) {
             errorMessage.textContent = "All fields are required!";
             return;
         }
