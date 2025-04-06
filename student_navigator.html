@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Career Compass - Job Navigation</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -16,6 +16,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            flex-direction: column;
         }
 
         .container {
@@ -65,6 +66,48 @@
             font-weight: 500;
             margin: 0;
         }
+
+        #logoutButton {
+            margin-top: 40px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 5px;
+            background-color: #ff5e5e;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #logoutButton:hover {
+            background-color: #e14d4d;
+        }
+
+        .logout-popup {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100%);
+            background-color: #333;
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 30px;
+            font-size: 1rem;
+            opacity: 0;
+            transition: transform 0.4s ease, opacity 0.4s ease;
+            z-index: 1000;
+        }
+
+        .logout-popup.visible {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .logout-popup.slide-out {
+            transform: translateX(-50%) translateY(100%);
+            opacity: 0;
+        }
     </style>
 </head>
 <body>
@@ -84,11 +127,48 @@
             <p>Notifications</p>
         </div>
     </div>
+
+    <!-- Logout button -->
+    <button id="logoutButton">Logout</button>
 </div>
 
 <script>
     function navigateTo(page) {
         window.location.href = page;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const logoutButton = document.getElementById("logoutButton");
+
+        if (logoutButton) {
+            logoutButton.addEventListener("click", () => {
+                showLogoutPopup();
+                setTimeout(() => {
+                    window.location.href = "welcome.html";
+                }, 2000);
+            });
+        }
+    });
+
+    function showLogoutPopup() {
+        const existingPopup = document.querySelector(".logout-popup");
+        if (existingPopup) {
+            existingPopup.remove();
+        }
+
+        const popup = document.createElement("div");
+        popup.textContent = "Logging Out... See you soon!";
+        popup.className = "logout-popup";
+        document.body.appendChild(popup);
+
+        setTimeout(() => {
+            popup.classList.add("visible");
+        }, 10);
+
+        setTimeout(() => {
+            popup.classList.add("slide-out");
+            setTimeout(() => popup.remove(), 500);
+        }, 1500);
     }
 </script>
 </body>
