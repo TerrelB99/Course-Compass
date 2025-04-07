@@ -9,38 +9,96 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("closeApplication").addEventListener("click", () => {
         document.getElementById("applicationModal").style.display = "none";
     });
+
+    document.getElementById("sortSalary").addEventListener("change", filterAndDisplayJobs);
+    document.getElementById("filterCompany").addEventListener("change", filterAndDisplayJobs);
+    document.getElementById("filterTitle").addEventListener("change", filterAndDisplayJobs);
 });
+
+let allJobs = [];
 
 async function fetchJobs() {
     try {
         const response = await fetch("/jobs");
-        const jobs = await response.json();
-
-        const jobCardsContainer = document.getElementById("jobCards");
-        jobCardsContainer.innerHTML = "";
-
-        jobs.forEach(job => {
-            const jobCard = document.createElement("div");
-            jobCard.classList.add("card");
-            jobCard.innerHTML = `
-                <div class="card-header">${job.jobTitle}</div>
-                <div class="card-content">
-                    <p><strong>Company:</strong> ${job.company}</p>
-                    <p><strong>Location:</strong> ${job.location}</p>
-                    <p><strong>Salary:</strong> $${job.salary}</p>
-                    <p><strong>Description:</strong> ${job.description}</p>
-                    <p><strong>Skills Required:</strong> ${job.skillsRequired.join(", ")}</p>
-                </div>
-                <div class="card-footer">
-                  <button onclick="openApplicationModal('${job._id}')">Apply Now</button>
-
-                </div>
-            `;
-            jobCardsContainer.appendChild(jobCard);
-        });
+        allJobs = await response.json();
+        populateFilterOptions();
+        filterAndDisplayJobs();
     } catch (error) {
         console.error("Error fetching jobs:", error);
     }
+}
+
+function populateFilterOptions() {
+    const companies = new Set();
+    const titles = new Set();
+
+    allJobs.forEach(job => {
+        companies.add(job.company);
+        titles.add(job.jobTitle);
+    });
+
+    const companySelect = document.getElementById("filterCompany");
+    companySelect.innerHTML = '<option value="">All Companies</option>';
+    companies.forEach(company => {
+        companySelect.innerHTML += `<option value="${company}">${company}</option>`;
+    });
+
+    const titleSelect = document.getElementById("filterTitle");
+    titleSelect.innerHTML = '<option value="">All Titles</option>';
+    titles.forEach(title => {
+        titleSelect.innerHTML += `<option value="${title}">${title}</option>`;
+    });
+}
+
+function filterAndDisplayJobs() {
+    const sortSalary = document.getElementById("sortSalary").value;
+    const selectedCompany = document.getElementById("filterCompany").value;
+    const selectedTitle = document.getElementById("filterTitle").value;
+
+    let filteredJobs = [...allJobs];
+
+    if (selectedCompany) {
+        filteredJobs = filteredJobs.filter(job => job.company === selectedCompany);
+    }
+    if (selectedTitle) {
+        filteredJobs = filteredJobs.filter(job => job.jobTitle === selectedTitle);
+    }
+    if (sortSalary === "asc") {
+        filteredJobs.sort((a, b) => a.salary - b.salary);
+    } else if (sortSalary === "desc") {
+        filteredJobs.sort((a, b) => b.salary - a.salary);
+    }
+
+    renderJobCards(filteredJobs);
+}
+
+function renderJobCards(jobs) {
+    const jobCardsContainer = document.getElementById("jobCards");
+    jobCardsContainer.innerHTML = "";
+
+    if (jobs.length === 0) {
+        jobCardsContainer.innerHTML = "<p>No jobs match the selected criteria.</p>";
+        return;
+    }
+
+    jobs.forEach(job => {
+        const jobCard = document.createElement("div");
+        jobCard.classList.add("card");
+        jobCard.innerHTML = `
+            <div class="card-header">${job.jobTitle}</div>
+            <div class="card-content">
+                <p><strong>Company:</strong> ${job.company}</p>
+                <p><strong>Location:</strong> ${job.location}</p>
+                <p><strong>Salary:</strong> $${job.salary}</p>
+                <p><strong>Description:</strong> ${job.description}</p>
+                <p><strong>Skills Required:</strong> ${job.skillsRequired.join(", ")}</p>
+            </div>
+            <div class="card-footer">
+                <button onclick="openApplicationModal('${job._id}')">Apply Now</button>
+            </div>
+        `;
+        jobCardsContainer.appendChild(jobCard);
+    });
 }
 
 function openApplicationModal(jobId) {
@@ -51,7 +109,6 @@ function openApplicationModal(jobId) {
 async function submitApplication() {
     const jobID = document.getElementById("applicationForm").dataset.jobId;
     const student = JSON.parse(sessionStorage.getItem("student"));
-
 
     if (!student || !jobID) {
         alert("Missing student or job ID.");

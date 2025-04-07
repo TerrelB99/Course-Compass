@@ -33,8 +33,10 @@ document.addEventListener("DOMContentLoaded", async function () {
                     </div>
                     <div class="card-footer">
                         <button class="blue-btn view-applicants" data-job-id="${job._id}">View Applicants</button>
+                        <button class="blue-btn shortlist-btn" title="View Shortlist" data-job-id="${job._id}">⭐</button>
                         <button class="red-btn delete-job" data-job-id="${job._id}">Delete Job</button>
                     </div>
+
                 `;
                 jobList.appendChild(jobCard);
             });
@@ -43,6 +45,12 @@ document.addEventListener("DOMContentLoaded", async function () {
                 button.addEventListener("click", (event) => {
                     const jobId = event.target.getAttribute("data-job-id");
                     window.location.href = `viewapplicants.html?jobId=${jobId}`;
+                });
+            });
+
+            document.querySelectorAll(".shortlist-btn").forEach(button => {
+                button.addEventListener("click", (event) => {
+                    window.location.href = "shortlist.html"; // You already created this page!
                 });
             });
 

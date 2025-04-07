@@ -40,8 +40,13 @@ document.addEventListener("DOMContentLoaded", async function () {
                     <textarea id="message-${applicant.studentID}" placeholder="Enter message..." class="message-input"></textarea>
                     <button class="send-message-btn" data-student-id="${applicant.studentID}">Send Message</button>
                     <button class="view-messages-btn" data-student-id="${applicant.studentID}">View Messages</button>
+                    <button class="shortlist-btn" data-student-id="${applicant.studentID}" 
+                            data-name="${applicant.firstName} ${applicant.lastName}"
+                            data-email="${applicant.email}"
+                            data-phone="${applicant.phone}">⭐ Shortlist</button>
                     <div id="messages-${applicant.studentID}" class="messages-container"></div>
                 `;
+
                 applicantsContainer.appendChild(applicantCard);
             });
 
@@ -95,6 +100,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                     alert("Failed to send message.");
                 }
             });
+
         });
 
         document.querySelectorAll('.view-messages-btn').forEach(button => {
@@ -133,6 +139,25 @@ document.addEventListener("DOMContentLoaded", async function () {
                 } catch (error) {
                     console.error("Error fetching messages:", error);
                     messagesContainer.innerHTML = "<p>Error loading messages.</p>";
+                }
+            });
+        });
+
+        document.querySelectorAll('.shortlist-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const name = this.getAttribute('data-name');
+                const email = this.getAttribute('data-email');
+                const phone = this.getAttribute('data-phone');
+
+                const shortlist = JSON.parse(localStorage.getItem("shortlist")) || [];
+
+                // Avoid duplicates
+                if (!shortlist.some(entry => entry.email === email)) {
+                    shortlist.push({ name, email, phone });
+                    localStorage.setItem("shortlist", JSON.stringify(shortlist));
+                    alert(`${name} has been added to your shortlist.`);
+                } else {
+                    alert(`${name} is already in your shortlist.`);
                 }
             });
         });

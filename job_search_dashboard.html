@@ -31,10 +31,24 @@
             color: #007bff;
         }
 
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .filters select,
+        .filters input[type="checkbox"] {
+            padding: 5px;
+            font-size: 1rem;
+        }
+
         .card-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-             gap: 20px;
+            gap: 20px;
         }
 
         .card {
@@ -85,7 +99,6 @@
             background-color: #0056b3;
         }
 
-        /* Application Modal Styling */
         .application-modal {
             display: none;
             position: fixed;
@@ -122,12 +135,6 @@
             margin-top: 10px;
             display: block;
         }
-
-        .card-footer {
-            display: flex;
-            justify-content: space-between;
-        }
-
     </style>
 </head>
 <body>
@@ -135,6 +142,22 @@
     <div class="dashboard-header">
         <h1>Job Search Dashboard</h1>
     </div>
+
+    <div class="filters">
+        <label for="sortSalary">Sort by Salary:</label>
+        <select id="sortSalary">
+            <option value="">-- Select --</option>
+            <option value="asc">Low to High</option>
+            <option value="desc">High to Low</option>
+        </select>
+
+        <label for="filterCompany">Filter by Company:</label>
+        <select id="filterCompany"></select>
+
+        <label for="filterTitle">Filter by Job Title:</label>
+        <select id="filterTitle"></select>
+    </div>
+
     <div class="card-grid" id="jobCards"></div>
 </div>
 
