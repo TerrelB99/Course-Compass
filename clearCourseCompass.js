@@ -3,23 +3,19 @@ const { MongoClient } = require("mongodb");
 const uri = "mongodb+srv://tbrown12354:SGoku1932@coursecompass.lespq.mongodb.net/?retryWrites=true&w=majority&appName=CourseCompass";
 const client = new MongoClient(uri);
 
-async function clearAllCollections() {
+async function clearMessagesCollection() {
     try {
         await client.connect();
         const db = client.db("CourseCompass");
-        const collections = await db.collections();
+        const messagesCollection = db.collection("messages");
 
-        for (const collection of collections) {
-            console.log(`Clearing: ${collection.collectionName}`);
-            await collection.deleteMany({});
-        }
-
-        console.log("✅ All collections cleared!");
+        const result = await messagesCollection.deleteMany({});
+        console.log(`✅ Cleared ${result.deletedCount} documents from 'messages' collection.`);
     } catch (err) {
-        console.error("❌ Error clearing collections:", err);
+        console.error("❌ Error clearing messages collection:", err);
     } finally {
         await client.close();
     }
 }
 
-clearAllCollections();
+clearMessagesCollection();

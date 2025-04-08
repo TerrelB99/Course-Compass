@@ -22,6 +22,10 @@ document.addEventListener("DOMContentLoaded", function () {
             if (response.ok) {
                 sessionStorage.setItem("student", JSON.stringify(data.user));
                 localStorage.setItem("studentID", data.user._id); // ✅ Store MongoDB `_id`
+                localStorage.setItem("studentSenderID", data.user.messageSenderID);
+                localStorage.setItem("studentReceiverID", data.user.messageReceiverID);
+                sessionStorage.setItem("student", JSON.stringify(data.user));
+
                 window.location.href = "student_navigator.html";
             } else {
                 document.getElementById("errorMessage").textContent = data.message;

@@ -114,6 +114,9 @@ app.post("/student/signup", async (req, res) => {
             appliedJobs: [],
             isActive: true,
             createdAt: new Date(),
+            messageSenderID: uuidv4(),
+            messageReceiverID: uuidv4()
+
         };
 
         const result = await studentsCollection.insertOne(newStudent);
@@ -131,30 +134,33 @@ app.post("/student/signup", async (req, res) => {
 
 
 // ✅ **Recruiter Sign-In Route**
-app.post('/recruiter/signin', async (req, res) => {
+// ✅ Full Recruiter Sign-In Route with UUIDs
+app.post("/recruiter/signin", async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        console.log("🔍 Searching for recruiter username:", username);
-
-        if (!recruitersCollection) {
-            return res.status(500).json({ message: "Database connection not established" });
-        }
-
         const recruiter = await recruitersCollection.findOne({ username });
 
         if (!recruiter || recruiter.password !== password) {
-            console.log(`❌ Invalid credentials for recruiter: ${username}`);
-            return res.status(400).json({ message: 'Invalid username or password' });
+            return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        console.log(`🎉 Recruiter login successful for: ${username}`);
-        res.status(200).json({ userType: "recruiter", user: recruiter });
-    } catch (err) {
-        console.error("❌ Error during recruiter sign-in:", err.message);
-        res.status(500).json({ message: 'Internal Server Error', error: err.message });
+        // ✅ Send UUIDs for messaging in response
+        res.status(200).json({
+            message: "Login successful",
+            user: {
+                recruiterId: recruiter._id.toString(),
+                username: recruiter.username,
+                messageSenderID: recruiter.messageSenderID,
+                messageReceiverID: recruiter.messageReceiverID
+            }
+        });
+    } catch (error) {
+        console.error("Recruiter sign-in error:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
     }
 });
+
 
 app.post("/recruiter/signup", async (req, res) => {
     try {
@@ -177,7 +183,10 @@ app.post("/recruiter/signup", async (req, res) => {
             company,
             jobsPosted: [],
             isActive: true,
-            createdAt: new Date()
+            createdAt: new Date(),
+            messageSenderID: uuidv4(),
+            messageReceiverID: uuidv4()
+
         };
 
         const result = await recruitersCollection.insertOne(newRecruiter);
@@ -356,57 +365,192 @@ app.post('/jobs/:jobID/apply', async (req, res) => {
 
 
 // ✅ Send a Message
-app.post('/messages/send', async (req, res) => {
+// ✅ Universal Messaging Route (Cross-role)
+app.post('/messages/universal-send', async (req, res) => {
+    const { senderId, receiverId, message } = req.body;
+
+    if (!senderId || !receiverId || !message) {
+        return res.status(400).json({ error: "senderId, receiverId, and message are required." });
+    }
+
     try {
-        const { senderId, receiverId, message } = req.body;
-
-        if (!senderId || !receiverId || !message) {
-            console.error("Message Error: Missing fields", { senderId, receiverId, message });
-            return res.status(400).json({ error: "Missing required fields" });
-        }
-
         const newMessage = {
-            senderId,
-            receiverId,
+            senderId,           // must be messageSenderID of sender
+            receiverId,         // must be messageReceiverID of receiver
             message,
             timestamp: new Date()
         };
 
         await messagesCollection.insertOne(newMessage);
-        res.status(200).json({ message: "Message sent successfully!" });
+        res.status(201).json({ message: "Message sent successfully", data: newMessage });
     } catch (error) {
-        console.error("Error sending message:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error("Error in universal-send:", error);
+        res.status(500).json({ error: "Failed to send message" });
     }
 });
 
-// ✅ Fetch Messages for a User
-app.get('/messages/:userId', async (req, res) => {
+// ✅ Universal Message Fetching Route for all roles
+app.get('/messages/:receiverId', async (req, res) => {
+    const { receiverId } = req.params;
+
     try {
-        const { userId } = req.params;
-        const messages = await messagesCollection.find({
-            $or: [{ senderId: userId }, { receiverId: userId }]
-        }).sort({ timestamp: -1 }).toArray();
+        console.log("🧠 Server fetching messages for receiverId:", req.params.receiverId);
+
+        const messages = await messagesCollection
+            .find({ receiverId })
+            .sort({ timestamp: -1 }) // newest first
+            .toArray();
 
         res.status(200).json(messages);
     } catch (error) {
-        console.error("Error fetching messages:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error("Error fetching messages for receiver:", error);
+        res.status(500).json({ message: "Failed to retrieve messages", error: error.message });
+    }
+});
+
+app.get('/users/lookup/:messageSenderID', async (req, res) => {
+    const { messageSenderID } = req.params;
+
+    const collections = [
+        { collection: adminsCollection, role: 'Admin' },
+        { collection: counselorsCollection, role: 'Counselor' },
+        { collection: recruitersCollection, role: 'Recruiter' },
+        { collection: studentsCollection, role: 'Student' }
+    ];
+
+    for (const { collection, role } of collections) {
+        const user = await collection.findOne({ messageSenderID });
+        if (user) {
+            return res.json({
+                name: `${user.firstName || user.firstname} ${user.lastName || user.lastname}`,
+                role,
+                messageReceiverID: user.messageReceiverID // ✅ Include this
+            });
+        }
+    }
+
+    res.status(404).json({ message: "User not found" });
+});
+
+
+// GET /messages/conversation?user1=...&user2=...
+app.get("/messages/conversation", async (req, res) => {
+    const { user1, user2 } = req.query;
+
+    try {
+        const messages = await database.collection("messages").find({
+            $or: [
+                { senderId: user1, receiverId: user2 },
+                { senderId: user2, receiverId: user1 }
+            ]
+        }).sort({ timestamp: 1 }).toArray();
+
+        res.json(messages);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch conversation" });
+    }
+});
+
+// 👇 New conversation route to support recruiter replies visibility
+app.get('/messages/thread/:recruiterSenderId/:recruiterReceiverId/:applicantSenderId', async (req, res) => {
+    const { recruiterSenderId, recruiterReceiverId, applicantSenderId } = req.params;
+
+    try {
+        const messages = await messagesCollection.find({
+            $or: [
+                { senderId: recruiterSenderId, receiverId: applicantSenderId },
+                { senderId: recruiterReceiverId, receiverId: applicantSenderId },
+                { senderId: applicantSenderId, receiverId: recruiterSenderId },
+                { senderId: applicantSenderId, receiverId: recruiterReceiverId }
+            ]
+        }).sort({ timestamp: 1 }).toArray();
+
+        res.status(200).json(messages);
+    } catch (error) {
+        console.error("❌ Failed to fetch message thread:", error);
+        res.status(500).json({ error: 'Server error fetching thread' });
+    }
+});
+
+app.get("/messages/thread/:recruiterSenderId/:recruiterReceiverId/:applicantSenderId/:applicantReceiverId", async (req, res) => {
+    const { recruiterSenderId, recruiterReceiverId, applicantSenderId, applicantReceiverId } = req.params;
+
+    try {
+        const messages = await database.collection("messages").find({
+            $or: [
+                { senderId: recruiterSenderId, receiverId: applicantReceiverId },
+                { senderId: applicantSenderId, receiverId: recruiterReceiverId },
+            ],
+        }).toArray();
+
+        res.json(messages);
+    } catch (error) {
+        console.error("Thread fetch error:", error);
+        res.status(500).json({ message: "Failed to fetch message thread" });
     }
 });
 
 
+
+
+
+
+app.get("/messages/thread/:id1/:id2", async (req, res) => {
+    const { id1, id2 } = req.params;
+    try {
+        const threadMessages = await db.collection("messages")
+            .find({
+                $or: [
+                    { senderId: id1, receiverId: id2 },
+                    { senderId: id2, receiverId: id1 }
+                ]
+            })
+            .toArray();
+
+        res.json(threadMessages);
+    } catch (err) {
+        res.status(500).send("Error fetching messages.");
+    }
+});
+
+
+// ✅ Updated route to return full applicant info with messageReceiverID
 app.get('/jobs/:jobId/applicants', async (req, res) => {
     try {
         const { jobId } = req.params;
-        const job = await jobsCollection.findOne({ _id: new ObjectId(jobId) });
 
+        // Find the job by ObjectId
+        const job = await jobsCollection.findOne({ _id: new ObjectId(jobId) });
 
         if (!job) {
             return res.status(404).json({ message: "Job not found" });
         }
 
-        res.status(200).json(job.applicants || []);
+        // Fetch full student info for each applicant using their stored studentID
+        const enrichedApplicants = await Promise.all(
+            (job.applicants || []).map(async (app) => {
+                const student = await studentsCollection.findOne({ _id: new ObjectId(app.studentID) });
+
+                if (!student) return null;
+
+                return {
+                    firstName: app.firstName,
+                    lastName: app.lastName,
+                    email: app.email,
+                    phone: app.phone,
+                    address: app.address,
+                    skills: app.skills,
+                    studentID: app.studentID,
+                    messageReceiverID: student.messageReceiverID,
+                    messageSenderID: student.messageSenderID // 🔥 This was missing
+                };
+            })
+        );
+
+        // Filter out any null entries from removed or broken student references
+        const validApplicants = enrichedApplicants.filter(Boolean);
+
+        res.status(200).json(validApplicants);
     } catch (error) {
         console.error("Error fetching applicants:", error);
         res.status(500).json({ message: "Error fetching applicants", error: error.message });
@@ -497,7 +641,10 @@ app.post('/counselor/signup', async (req, res) => {
             major,
             isActive: true,
             university,
-            createdAt: new Date()
+            createdAt: new Date(),
+            messageSenderID: uuidv4(),
+            messageReceiverID: uuidv4()
+
         };
 
         await counselorsCollection.insertOne(newCounselor);
@@ -539,7 +686,10 @@ app.post('/admin/signup', async (req, res) => {
             username,
             password: hashedPassword, // ✅ Store hashed password
             createdAt: new Date(),
-            isActive: true
+            isActive: true,
+            messageSenderID: uuidv4(),
+            messageReceiverID: uuidv4()
+
         };
 
         await adminsCollection.insertOne(newAdmin);

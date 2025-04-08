@@ -30,8 +30,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 const data = await response.json();
 
                 if (response.ok) {
-                    sessionStorage.setItem("recruiter", JSON.stringify(data));
-                    localStorage.setItem("recruiterID", data._id); // ✅ Ensure correct ID storage
+                    // ✅ Store the full recruiter data for messaging access
+                    sessionStorage.setItem("recruiter", JSON.stringify({
+                        _id: data.user.recruiterId,
+                        username: data.user.username,
+                        messageSenderID: data.user.messageSenderID,
+                        messageReceiverID: data.user.messageReceiverID
+                    }));
+
+                    // ✅ Store recruiterID in localStorage for other components if needed
+                    localStorage.setItem("recruiterID", data.user.recruiterId);
+
                     window.location.href = "recruiter_dashboard.html"; // Redirect after login
                 } else {
                     alert(data.message);

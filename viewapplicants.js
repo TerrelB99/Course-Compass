@@ -9,8 +9,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         return;
     }
 
-    console.log("🔍 Fetching applicants for job ID:", jobId);
-
     async function fetchApplicants() {
         try {
             const response = await fetch(`/jobs/${jobId}/applicants`);
@@ -19,8 +17,6 @@ document.addEventListener("DOMContentLoaded", async function () {
             }
 
             const applicants = await response.json();
-            console.log("✅ Applicants fetched:", applicants);
-
             applicantsContainer.innerHTML = "";
 
             if (!Array.isArray(applicants) || applicants.length === 0) {
@@ -31,6 +27,8 @@ document.addEventListener("DOMContentLoaded", async function () {
             applicants.forEach(applicant => {
                 const applicantCard = document.createElement("div");
                 applicantCard.classList.add("applicant-card");
+                applicantCard.dataset.messageSenderId = applicant.messageSenderID;
+
                 applicantCard.innerHTML = `
                     <p><strong>Name:</strong> ${applicant.firstName} ${applicant.lastName}</p>
                     <p><strong>Email:</strong> ${applicant.email}</p>
@@ -38,15 +36,15 @@ document.addEventListener("DOMContentLoaded", async function () {
                     <p><strong>Address:</strong> ${applicant.address}</p>
                     <p><strong>Skills:</strong> ${Array.isArray(applicant.skills) ? applicant.skills.join(", ") : applicant.skills}</p>
                     <textarea id="message-${applicant.studentID}" placeholder="Enter message..." class="message-input"></textarea>
-                    <button class="send-message-btn" data-student-id="${applicant.studentID}">Send Message</button>
-                    <button class="view-messages-btn" data-student-id="${applicant.studentID}">View Messages</button>
-                    <button class="shortlist-btn" data-student-id="${applicant.studentID}" 
-                            data-name="${applicant.firstName} ${applicant.lastName}"
-                            data-email="${applicant.email}"
-                            data-phone="${applicant.phone}">⭐ Shortlist</button>
+                    <button class="send-message-btn" data-student-id="${applicant.studentID}" data-message-receiver-id="${applicant.messageReceiverID}">Send Message</button>
+                    <button class="view-messages-btn" 
+                        data-student-id="${applicant.studentID}" 
+                        data-message-sender-id="${applicant.messageSenderID}" 
+                        data-message-receiver-id="${applicant.messageReceiverID}">
+                        View Messages
+                    </button>
                     <div id="messages-${applicant.studentID}" class="messages-container"></div>
                 `;
-
                 applicantsContainer.appendChild(applicantCard);
             });
 
@@ -61,11 +59,13 @@ document.addEventListener("DOMContentLoaded", async function () {
         document.querySelectorAll('.send-message-btn').forEach(button => {
             button.addEventListener('click', async function () {
                 const studentId = this.getAttribute('data-student-id');
+                const messageReceiverId = this.getAttribute('data-message-receiver-id');
                 const messageInput = document.querySelector(`#message-${studentId}`);
                 const message = messageInput.value.trim();
-                const recruiterId = localStorage.getItem("recruiterID"); // Get recruiter ID from storage
 
-                if (!recruiterId) {
+                const recruiterSenderID = localStorage.getItem("recruiterSenderID");
+
+                if (!recruiterSenderID) {
                     alert("Error: Recruiter ID is missing. Please log in again.");
                     return;
                 }
@@ -76,14 +76,12 @@ document.addEventListener("DOMContentLoaded", async function () {
                 }
 
                 try {
-                    const response = await fetch('/messages/send', {
+                    const response = await fetch('/messages/universal-send', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            senderId: recruiterId,
-                            receiverId: studentId,
-                            senderModel: "recruiters",
-                            receiverModel: "students",
+                            senderId: recruiterSenderID,
+                            receiverId: messageReceiverId,
                             message
                         })
                     });
@@ -100,64 +98,62 @@ document.addEventListener("DOMContentLoaded", async function () {
                     alert("Failed to send message.");
                 }
             });
-
         });
 
         document.querySelectorAll('.view-messages-btn').forEach(button => {
             button.addEventListener('click', async function () {
                 const studentId = this.getAttribute('data-student-id');
+                const applicantSenderId = this.getAttribute('data-message-sender-id');
+                const applicantReceiverId = this.getAttribute('data-message-receiver-id');
                 const messagesContainer = document.querySelector(`#messages-${studentId}`);
 
-                try {
-                    const recruiterId = localStorage.getItem("recruiterID"); // Ensure recruiter ID exists
-                    if (!recruiterId) {
-                        alert("Error: Recruiter ID is missing. Please log in again.");
-                        return;
-                    }
+                const recruiterSenderId = localStorage.getItem("recruiterSenderID");
+                const recruiterReceiverId = localStorage.getItem("recruiterReceiverID");
 
-                    const response = await fetch(`/messages/conversation/${recruiterId}/${studentId}`);
-                    if (!response.ok) {
-                        throw new Error("Failed to fetch messages");
-                    }
+                if (!recruiterSenderId || !recruiterReceiverId || !applicantSenderId || !applicantReceiverId) {
+                    alert("Missing recruiter or applicant identifiers. Please log in again.");
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/messages/thread/${recruiterSenderId}/${recruiterReceiverId}/${applicantSenderId}/${applicantReceiverId}`);
+                    if (!response.ok) throw new Error("Failed to fetch messages");
 
                     const messages = await response.json();
                     messagesContainer.innerHTML = "";
+
                     if (messages.length === 0) {
                         messagesContainer.innerHTML = "<p>No messages yet.</p>";
                         return;
                     }
 
-                    messages.forEach(msg => {
-                        const messageCard = document.createElement("div");
-                        messageCard.classList.add("message-card");
-                        messageCard.innerHTML = `
-                            <p><strong>${msg.senderModel === "recruiters" ? "You" : "Student"}:</strong> ${msg.message}</p>
-                            <p><small>Received: ${new Date(msg.timestamp).toLocaleString()}</small></p>
-                        `;
-                        messagesContainer.appendChild(messageCard);
-                    });
+                    messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+                    for (const msg of messages) {
+                        try {
+                            const lookupRes = await fetch(`/users/lookup/${msg.senderId}`);
+                            const userData = await lookupRes.json();
+                            const senderName = userData?.name || "Unknown";
+                            const senderRole = userData?.role || "User";
+
+                            const isRecruiter = msg.senderId === recruiterSenderId || msg.senderId === recruiterReceiverId;
+
+                            const messageCard = document.createElement("div");
+                            messageCard.classList.add(isRecruiter ? "you" : "them", "message-thread");
+
+                            messageCard.innerHTML = `
+                                <p><strong>From:</strong> ${senderName} (${senderRole})</p>
+                                <p>${msg.message}</p>
+                                <p><small>${new Date(msg.timestamp).toLocaleString()}</small></p>
+                            `;
+                            messagesContainer.appendChild(messageCard);
+                        } catch (lookupErr) {
+                            console.error("Failed to lookup sender info:", lookupErr);
+                        }
+                    }
                 } catch (error) {
                     console.error("Error fetching messages:", error);
                     messagesContainer.innerHTML = "<p>Error loading messages.</p>";
-                }
-            });
-        });
-
-        document.querySelectorAll('.shortlist-btn').forEach(button => {
-            button.addEventListener('click', function () {
-                const name = this.getAttribute('data-name');
-                const email = this.getAttribute('data-email');
-                const phone = this.getAttribute('data-phone');
-
-                const shortlist = JSON.parse(localStorage.getItem("shortlist")) || [];
-
-                // Avoid duplicates
-                if (!shortlist.some(entry => entry.email === email)) {
-                    shortlist.push({ name, email, phone });
-                    localStorage.setItem("shortlist", JSON.stringify(shortlist));
-                    alert(`${name} has been added to your shortlist.`);
-                } else {
-                    alert(`${name} is already in your shortlist.`);
                 }
             });
         });

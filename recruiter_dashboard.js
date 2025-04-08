@@ -6,7 +6,15 @@ document.addEventListener("DOMContentLoaded", async function () {
     const addJobBtn = document.getElementById("add-job");
 
     const recruiterSession = sessionStorage.getItem("recruiter");
-    const recruiter = recruiterSession ? JSON.parse(recruiterSession).user : null;
+    const recruiter = recruiterSession ? JSON.parse(recruiterSession) : null;
+
+    if (recruiter) {
+        localStorage.setItem("recruiterSenderID", recruiter.messageSenderID);
+        localStorage.setItem("recruiterReceiverID", recruiter.messageReceiverID);
+    }
+
+
+
 
     if (!recruiter) {
         alert("You need to log in as a recruiter.");
