@@ -490,6 +490,31 @@ app.get("/messages/thread/:recruiterSenderId/:recruiterReceiverId/:applicantSend
     }
 });
 
+// Optional: Filter users by role on server-side
+app.get('/users/by-role/:role', async (req, res) => {
+    const { role } = req.params;
+    let collection;
+    switch (role.toLowerCase()) {
+        case "student": collection = studentsCollection; break;
+        case "recruiter": collection = recruitersCollection; break;
+        case "counselor": collection = counselorsCollection; break;
+        case "admin": collection = adminsCollection; break;
+        default: return res.status(400).json({ message: "Invalid role" });
+    }
+
+    try {
+        const users = await collection.find().toArray();
+        const result = users.map(u => ({
+            firstName: u.firstName,
+            lastName: u.lastName,
+            messageSenderID: u.messageSenderID,
+            messageReceiverID: u.messageReceiverID
+        }));
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching users by role" });
+    }
+});
 
 
 

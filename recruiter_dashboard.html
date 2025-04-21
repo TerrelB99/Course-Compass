@@ -203,7 +203,12 @@
 <body>
 
 <div class="dashboard-container">
+
   <div class="dashboard-header">
+
+    <!-- ✅ New Messages button added to top-left corner -->
+    <button class="blue-btn" style="position:absolute; left:0; top:0; margin:10px;" onclick="window.location.href='recruitersmessenger.html'">Messages</button>
+
     <h1>Recruiter Dashboard</h1>
     <button class="logout-btn" id="logoutButton">Logout</button>
   </div>
@@ -211,6 +216,7 @@
   <button class="post-job-btn" id="add-job">Post New Job</button>
   <div class="card-grid" id="job-list"></div>
 </div>
+
 
 <!-- Job Posting Modal -->
 <div id="postJobModal" class="job-modal">
