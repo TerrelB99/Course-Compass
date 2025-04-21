@@ -125,5 +125,27 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
     }
 
+    function populateCollegeDropdown(applicants) {
+        const dropdown = document.getElementById("collegeDropdown");
+        const uniqueColleges = [...new Set(applicants.map(app => app.university).filter(Boolean))];
+
+        uniqueColleges.forEach(college => {
+            const option = document.createElement("option");
+            option.value = college;
+            option.textContent = college;
+            dropdown.appendChild(option);
+        });
+
+        dropdown.addEventListener("change", () => {
+            const selected = dropdown.value;
+            displayApplicants(selected === "all" ? applicants : applicants.filter(a => a.university === selected));
+        });
+    }
+
+
+
     fetchApplicants();
+    displayApplicants(applicants);
+    populateCollegeDropdown(applicants);
+
 });

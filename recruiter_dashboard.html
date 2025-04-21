@@ -253,11 +253,17 @@
 
     if (logoutButton) {
       logoutButton.addEventListener("click", () => {
+        // Clear local/session storage or cookies
+        localStorage.clear();         // If you're using localStorage
+        sessionStorage.clear();       // If you're using sessionStorage
+
         showLogoutPopup();
+
         setTimeout(() => {
-          window.location.href = "welcome.html"; // Adjust to your actual logout redirect
+          window.location.href = "welcome.html";
         }, 2000);
       });
+
     }
   });
 

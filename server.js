@@ -278,6 +278,16 @@ app.delete('/jobs/:jobId', async (req, res) => {
     }
 });
 
+app.get("/students/universities", async (req, res) => {
+    try {
+        const universities = await studentsCollection.distinct("university");
+        res.json(universities.filter(Boolean));
+    } catch (err) {
+        console.error("Error fetching universities:", err);
+        res.status(500).json({ error: "Failed to fetch universities" });
+    }
+});
+
 
 
 // ✅ Get All Jobs (Visible to Students)
