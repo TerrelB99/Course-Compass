@@ -771,18 +771,20 @@ app.post('/admin/signin', async (req, res) => {
 
 app.get('/admin/users', async (req, res) => {
     try {
-        if (!studentsCollection || !recruitersCollection || !counselorsCollection) {
+        if (!studentsCollection || !recruitersCollection || !counselorsCollection || !adminsCollection) {
             return res.status(500).json({ message: "Database connection not established" });
         }
 
         const students = await studentsCollection.find().toArray();
         const recruiters = await recruitersCollection.find().toArray();
         const counselors = await counselorsCollection.find().toArray();
+        const admins = await adminsCollection.find().toArray(); // ✅ ADD THIS
 
         const users = [
             ...students.map(user => ({ ...user, role: "Student" })),
             ...recruiters.map(user => ({ ...user, role: "Recruiter" })),
-            ...counselors.map(user => ({ ...user, role: "Counselor" }))
+            ...counselors.map(user => ({ ...user, role: "Counselor" })),
+            ...admins.map(user => ({ ...user, role: "Admin" })) // ✅ ADD THIS
         ];
 
         res.status(200).json(users);
@@ -791,6 +793,8 @@ app.get('/admin/users', async (req, res) => {
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 });
+
+
 
 app.delete('/admin/delete/:role/:id', async (req, res) => {
     const { role, id } = req.params;

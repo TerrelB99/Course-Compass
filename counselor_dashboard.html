@@ -87,7 +87,6 @@
             background-color: #c82333;
         }
 
-        /* Logout popup styling */
         .logout-popup {
             position: fixed;
             bottom: 30px;
@@ -125,7 +124,6 @@
         </select>
     </div>
 
-
     <div class="dashboard-content">
         <div class="dashboard-card">
             <h3>View Students</h3>
@@ -155,25 +153,44 @@
     function logout() {
         showLogoutPopup();
         setTimeout(() => {
-            window.location.href = "welcome.html"; // Redirect after logout
+            window.location.href = "welcome.html";
         }, 2000);
+    }
+
+    function viewMessages() {
+        const stored = sessionStorage.getItem("counselor");
+        if (!stored) {
+            alert("Session expired. Please log in again.");
+            return;
+        }
+
+        const parsed = JSON.parse(stored);
+        if (!parsed.messageSenderID || !parsed.messageReceiverID) {
+            alert("Incomplete user session data.");
+            return;
+        }
+
+        // Re-set with full structure (you can include extra fields if needed)
+        sessionStorage.setItem("counselor", JSON.stringify({
+            messageSenderID: parsed.messageSenderID,
+            messageReceiverID: parsed.messageReceiverID,
+            role: "Counselor",
+            name: `${parsed.firstName || "Counselor"} ${parsed.lastName || ""}`.trim()
+        }));
+
+        window.location.href = "Counselormessenger.html";
     }
 
     function showLogoutPopup() {
         const existingPopup = document.querySelector(".logout-popup");
-        if (existingPopup) {
-            existingPopup.remove();
-        }
+        if (existingPopup) existingPopup.remove();
 
         const popup = document.createElement("div");
         popup.textContent = "Logging Out... See you soon!";
         popup.className = "logout-popup";
         document.body.appendChild(popup);
 
-        setTimeout(() => {
-            popup.classList.add("visible");
-        }, 10);
-
+        setTimeout(() => popup.classList.add("visible"), 10);
         setTimeout(() => {
             popup.classList.add("slide-out");
             setTimeout(() => popup.remove(), 500);

@@ -22,8 +22,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (response.ok) {
                 const result = await response.json();
-                alert(`Welcome, ${result.counselor.firstname} ${result.counselor.lastname}!`);
-                // Redirect to counselor_dashboard.html
+                const { firstName, lastName, messageSenderID, messageReceiverID } = result.counselor;
+
+                // ✅ Set session storage for counselor
+                sessionStorage.setItem("counselor", JSON.stringify({
+                    firstName: firstName,
+                    lastName: lastName,
+                    role: "Counselor",
+                    messageSenderID,
+                    messageReceiverID
+                }));
+
+                alert(`Welcome, ${firstName} ${lastName}!`);
                 window.location.href = "counselor_dashboard.html";
             } else {
                 const errorText = await response.json();
