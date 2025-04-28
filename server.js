@@ -23,10 +23,10 @@ const uri = "mongodb+srv://tbrown12354:SGoku1932@coursecompass.lespq.mongodb.net
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
+        deprecationErrors: true // (optional to keep, safe)
     }
 });
+
 
 let database, studentsCollection, recruitersCollection, jobsCollection;
 
@@ -985,6 +985,97 @@ app.get('/counselor/students/university-applications', async (req, res) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 });
+
+// ✅ Back-end route to allow counselor to suggest a job to a student
+app.post("/counselor/suggest-job", async (req, res) => {
+    const { counselorId, studentId, jobId } = req.body;
+
+    if (!counselorId || !studentId || !jobId) {
+        return res.status(400).json({ message: "Missing counselorId, studentId, or jobId" });
+    }
+
+    try {
+        const job = await jobsCollection.findOne({ jobId });
+        if (!job) return res.status(404).json({ message: "Job not found" });
+
+        const suggestion = {
+            jobId,
+            jobTitle: job.jobTitle,
+            company: job.company,
+            suggestedAt: new Date(),
+            counselorId
+        };
+
+        await studentsCollection.updateOne(
+            { _id: new ObjectId(studentId) },
+            { $push: { suggestedJobs: suggestion } }
+        );
+
+        res.status(200).json({ message: "Job suggested successfully." });
+    } catch (error) {
+        console.error("Error suggesting job:", error);
+        res.status(500).json({ message: "Failed to suggest job" });
+    }
+});
+
+// ✅ Add suggestedJobs field to student model when created (ensure frontend reflects this too)
+// Within student signup logic:
+// suggestedJobs: []
+
+
+// ✅ Front-end JavaScript to suggest job (add this to counselor_dashboard.js)
+function suggestJobToStudent(studentId, studentName) {
+    fetch('/jobs')
+        .then(res => res.json())
+        .then(jobs => {
+            const jobOptions = jobs.map(job => `<option value="${job.jobId}">${job.jobTitle} at ${job.company}</option>`).join('');
+            const modal = document.createElement('div');
+            modal.className = 'job-suggest-modal';
+            modal.innerHTML = `
+                <div class="modal-content" style="background:#fff;padding:20px;border-radius:10px;box-shadow:0 4px 8px rgba(0,0,0,0.1);">
+                    <h3>Suggest a Job to ${studentName}</h3>
+                    <select id="suggestedJobSelect">${jobOptions}</select>
+                    <button onclick="submitJobSuggestion('${studentId}')">Suggest</button>
+                    <button onclick="this.parentElement.parentElement.remove()">Cancel</button>
+                </div>`;
+            document.body.appendChild(modal);
+        });
+}
+
+function submitJobSuggestion(studentId) {
+    const jobId = document.getElementById('suggestedJobSelect').value;
+    const counselor = JSON.parse(sessionStorage.getItem("counselor"));
+
+    fetch('/counselor/suggest-job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            counselorId: counselor.messageSenderID,
+            studentId,
+            jobId
+        })
+    })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            document.querySelector('.job-suggest-modal').remove();
+        })
+        .catch(err => {
+            console.error("Error suggesting job:", err);
+            alert("Failed to suggest job.");
+        });
+}
+
+
+// ✅ Inject Suggest Job button into student display cards
+// This should go inside displayStudents() function in counselor_dashboard.js
+// Example placement:
+// const card.innerHTML = ` ...
+//   <button onclick="suggestJobToStudent('${student._id}', '${student.firstname} ${student.lastname}')">Suggest Job</button>
+// `;
+// Above or below application details
+
+
 
 
 

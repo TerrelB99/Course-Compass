@@ -43,28 +43,29 @@ document.addEventListener("DOMContentLoaded", () => {
             const card = document.createElement("div");
             card.className = "dashboard-card";
             card.innerHTML = `
-                <div>
-                    <h3>${student.firstname || "N/A"} ${student.lastname || "N/A"}</h3>
-                    <p><strong>Username:</strong> ${student.username || "N/A"}</p>
-                    <p><strong>Major:</strong> ${student.major || "N/A"}</p>
-                    <p><strong>University:</strong> ${student.university || "N/A"}</p>
-                    <h4>Applications:</h4>
-                    ${
+            <div>
+                <h3>${student.firstname || "N/A"} ${student.lastname || "N/A"}</h3>
+                <p><strong>Username:</strong> ${student.username || "N/A"}</p>
+                <p><strong>Major:</strong> ${student.major || "N/A"}</p>
+                <p><strong>University:</strong> ${student.university || "N/A"}</p>
+                <h4>Applications:</h4>
+                ${
                 applications.length === 0
                     ? "<p>No applications submitted.</p>"
                     : "<ul>" + applications.map(app => `
-                            <li>
-                                <strong>${app.jobTitle}</strong> at ${app.company}<br/>
-                                <strong>Status:</strong> ${app.status}<br/>
-                                <strong>Email:</strong> ${app.email}<br/>
-                                ${app.skills?.length ? `<strong>Skills:</strong> ${app.skills.join(", ")}` : ""}
-                                ${app.resume ? `<br/><a href="${app.resume}" target="_blank">📄 View Resume</a>` : ""}
-                                <br/><em>Applied on: ${new Date(app.appliedAt).toLocaleDateString()}</em>
-                            </li>
-                        `).join("") + "</ul>"
+                                <li>
+                                    <strong>${app.jobTitle}</strong> at ${app.company}<br/>
+                                    <strong>Status:</strong> ${app.status}<br/>
+                                    <strong>Email:</strong> ${app.email}<br/>
+                                    ${app.skills?.length ? `<strong>Skills:</strong> ${app.skills.join(", ")}` : ""}
+                                    ${app.resume ? `<br/><a href="${app.resume}" target="_blank">📄 View Resume</a>` : ""}
+                                    <br/><em>Applied on: ${new Date(app.appliedAt).toLocaleDateString()}</em>
+                                </li>
+                            `).join("") + "</ul>"
             }
-                </div>
-            `;
+                <button onclick="suggestJobToStudent('${student._id}', '${student.firstname} ${student.lastname}')">Suggest Job</button>
+            </div>
+        `;
             container.appendChild(card);
         });
 
@@ -74,4 +75,5 @@ document.addEventListener("DOMContentLoaded", () => {
         container.classList.add("results");
         document.querySelector(".dashboard-content").appendChild(container);
     }
+
 });
