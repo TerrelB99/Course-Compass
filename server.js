@@ -830,6 +830,42 @@ app.get('/admin/user/:role/:id', async (req, res) => {
     }
 });
 
+app.get('/api/student/appliedJobs', async (req, res) => {
+    try {
+        const { studentID } = req.query;
+        if (!studentID) {
+            return res.status(400).json({ message: "Missing studentID" });
+        }
+
+        const student = await studentsCollection.findOne({ _id: new ObjectId(studentID) });
+        if (!student) {
+            return res.status(404).json({ message: "Student not found" });
+        }
+
+        res.status(200).json({ appliedJobs: student.appliedJobs || [] });
+    } catch (error) {
+        console.error("Error fetching applied jobs:", error.message);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+});
+
+// Fetch job details by jobId
+app.get('/api/jobs/:jobId', async (req, res) => {
+    try {
+        const { jobId } = req.params;
+        const job = await jobsCollection.findOne({ _id: new ObjectId(jobId) });
+
+        if (!job) {
+            return res.status(404).json({ message: "Job not found." });
+        }
+
+        res.status(200).json(job);
+    } catch (error) {
+        console.error("Error fetching job details:", error.message);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+});
+
 app.patch('/admin/jobs/:jobId/approve', async (req, res) => {
     try {
         const { jobId } = req.params;
