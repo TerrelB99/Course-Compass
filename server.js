@@ -500,36 +500,6 @@ app.get("/messages/thread/:recruiterSenderId/:recruiterReceiverId/:applicantSend
     }
 });
 
-// Optional: Filter users by role on server-side
-app.get('/users/by-role/:role', async (req, res) => {
-    const { role } = req.params;
-    let collection;
-    switch (role.toLowerCase()) {
-        case "student": collection = studentsCollection; break;
-        case "recruiter": collection = recruitersCollection; break;
-        case "counselor": collection = counselorsCollection; break;
-        case "admin": collection = adminsCollection; break;
-        default: return res.status(400).json({ message: "Invalid role" });
-    }
-
-    try {
-        const users = await collection.find().toArray();
-        const result = users.map(u => ({
-            firstName: u.firstName,
-            lastName: u.lastName,
-            messageSenderID: u.messageSenderID,
-            messageReceiverID: u.messageReceiverID
-        }));
-        res.json(result);
-    } catch (err) {
-        res.status(500).json({ message: "Error fetching users by role" });
-    }
-});
-
-
-
-
-
 app.get("/messages/thread/:id1/:id2", async (req, res) => {
     const { id1, id2 } = req.params;
     try {
@@ -771,18 +741,20 @@ app.post('/admin/signin', async (req, res) => {
 
 app.get('/admin/users', async (req, res) => {
     try {
-        if (!studentsCollection || !recruitersCollection || !counselorsCollection) {
+        if (!studentsCollection || !recruitersCollection || !counselorsCollection || !adminsCollection) {
             return res.status(500).json({ message: "Database connection not established" });
         }
 
         const students = await studentsCollection.find().toArray();
         const recruiters = await recruitersCollection.find().toArray();
         const counselors = await counselorsCollection.find().toArray();
+        const admins = await adminsCollection.find().toArray(); // ✅ ADD THIS
 
         const users = [
             ...students.map(user => ({ ...user, role: "Student" })),
             ...recruiters.map(user => ({ ...user, role: "Recruiter" })),
-            ...counselors.map(user => ({ ...user, role: "Counselor" }))
+            ...counselors.map(user => ({ ...user, role: "Counselor" })),
+            ...admins.map(user => ({ ...user, role: "Admin" })) // ✅ ADD THIS
         ];
 
         res.status(200).json(users);
@@ -791,6 +763,8 @@ app.get('/admin/users', async (req, res) => {
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 });
+
+
 
 app.delete('/admin/delete/:role/:id', async (req, res) => {
     const { role, id } = req.params;
@@ -985,6 +959,64 @@ app.get('/counselor/students/university-applications', async (req, res) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 });
+
+// --- NEW counselor matching route ---
+app.post("/matches", async (req, res) => {
+    const { counselorId, studentId, jobId } = req.body;
+
+    if (!counselorId || !studentId || !jobId) {
+        return res.status(400).json({ message: "Missing counselorId, studentId, or jobId" });
+    }
+
+    try {
+        const recommendation = {
+            counselorId,
+            jobId,
+            recommendedAt: new Date()
+        };
+
+        const updateResult = await studentsCollection.updateOne(
+            { _id: new ObjectId(studentId) },
+            { $push: { recommendedJobs: recommendation } }
+        );
+
+        if (updateResult.modifiedCount === 1) {
+            res.status(201).json({ message: "Job recommended to student successfully!" });
+        } else {
+            res.status(404).json({ message: "Student not found or update failed." });
+        }
+    } catch (error) {
+        console.error("Error recommending job:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+app.get('/users/by-role/:role', async (req, res) => {
+    const { role } = req.params;
+    let collection;
+    switch (role.toLowerCase()) {
+        case "student": collection = studentsCollection; break;
+        case "recruiter": collection = recruitersCollection; break;
+        case "counselor": collection = counselorsCollection; break;
+        case "admin": collection = adminsCollection; break;
+        default: return res.status(400).json({ message: "Invalid role" });
+    }
+
+    try {
+        const users = await collection.find().toArray();
+        const result = users.map(u => ({
+            _id: u._id.toString(),  // ✅ Add MongoDB _id
+            firstName: u.firstName,
+            lastName: u.lastName,
+            messageSenderID: u.messageSenderID,
+            messageReceiverID: u.messageReceiverID
+        }));
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching users by role" });
+    }
+});
+
 
 // ✅ Back-end route to allow counselor to suggest a job to a student
 app.post("/counselor/suggest-job", async (req, res) => {

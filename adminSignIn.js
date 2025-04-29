@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (response.ok) {
                 const result = await response.json();
-                alert(`Welcome, Admin ${result.admin.lastname}!`);
+                alert(`Welcome, Admin ${result.admin.lastName}!`);
                 window.location.href = "admin.html";
             } else {
                 const errorText = await response.json();

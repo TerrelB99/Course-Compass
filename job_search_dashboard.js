@@ -76,15 +76,22 @@ function renderJobCards(jobs) {
     const jobCardsContainer = document.getElementById("jobCards");
     jobCardsContainer.innerHTML = "";
 
+    const student = JSON.parse(sessionStorage.getItem("student"));
+    const recommendedJobs = (student.recommendedJobs || []).map(rec => rec.jobId);
+
     if (jobs.length === 0) {
         jobCardsContainer.innerHTML = "<p>No jobs match the selected criteria.</p>";
         return;
     }
 
     jobs.forEach(job => {
+        const isRecommended = recommendedJobs.includes(job._id);
+
         const jobCard = document.createElement("div");
         jobCard.classList.add("card");
+
         jobCard.innerHTML = `
+            ${isRecommended ? '<div class="star-badge">⭐</div>' : ''}
             <div class="card-header">${job.jobTitle}</div>
             <div class="card-content">
                 <p><strong>Company:</strong> ${job.company}</p>
@@ -97,9 +104,12 @@ function renderJobCards(jobs) {
                 <button onclick="openApplicationModal('${job._id}')">Apply Now</button>
             </div>
         `;
+
+        jobCard.style.position = "relative"; // ⭐ Ensure the star can float inside
         jobCardsContainer.appendChild(jobCard);
     });
 }
+
 
 function openApplicationModal(jobId) {
     document.getElementById("applicationForm").dataset.jobId = jobId;

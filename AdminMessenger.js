@@ -1,9 +1,10 @@
 document.addEventListener("DOMContentLoaded", async function () {
     const container = document.getElementById("notification-list");
     const composeSection = document.getElementById("compose-section");
+    const replyBoxContainer = document.getElementById("reply-box-container");
 
     const currentUser = JSON.parse(sessionStorage.getItem("admin"));
-    if (!currentUser || !currentUser.messageSenderID || !currentUser.messageReceiverID) {
+    if (!container || !currentUser?.messageSenderID || !currentUser?.messageReceiverID) {
         container.innerHTML = "<p>Error: Please log in again.</p>";
         return;
     }
@@ -13,11 +14,11 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     composeSection.innerHTML = `
         <select id="role-select">
-          <option value="">Select Role</option>
-          <option value="Student">Student</option>
-          <option value="Recruiter">Recruiter</option>
-          <option value="Counselor">Counselor</option>
-          <option value="Admin">Admin</option>
+            <option value="">Select Role</option>
+            <option value="Student">Student</option>
+            <option value="Recruiter">Recruiter</option>
+            <option value="Counselor">Counselor</option>
+            <option value="Admin">Admin</option>
         </select>
         <select id="user-select"><option value="">Select User</option></select>
         <textarea id="new-message" placeholder="Write a message..."></textarea>
@@ -34,11 +35,13 @@ document.addEventListener("DOMContentLoaded", async function () {
         const filtered = data.filter(u => u.role === role);
         userSelect.innerHTML = `<option value="">Select ${role}</option>` +
             filtered.map(u => `<option value="${u.messageReceiverID}" data-sender="${u.messageSenderID}">
-                ${u.firstName} ${u.lastName}</option>`).join("");
+                                ${u.firstName} ${u.lastName}</option>`).join("");
     });
 
     document.getElementById("send-btn").addEventListener("click", async function () {
-        const receiverID = document.getElementById("user-select").value;
+        const selectedOption = document.getElementById("user-select").selectedOptions[0];
+        const receiverID = selectedOption?.value;
+        const otherSenderID = selectedOption?.getAttribute("data-sender");
         const message = document.getElementById("new-message").value.trim();
         if (!receiverID || !message) return alert("Missing fields");
 
@@ -49,8 +52,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
 
         if (res.ok) {
-            alert("Message sent.");
             document.getElementById("new-message").value = "";
+            loadThread(otherSenderID, receiverID); // 👈 Immediately load the thread
         } else {
             alert("Error sending message");
         }
@@ -85,20 +88,25 @@ document.addEventListener("DOMContentLoaded", async function () {
         container.appendChild(header);
 
         for (const msg of msgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))) {
+            const senderRes = await fetch(`/users/lookup/${msg.senderId}`);
+            const senderData = await senderRes.json();
+
             const entry = document.createElement("div");
             entry.classList.add("message-entry", msg.senderId === senderID ? "you" : "them");
-            entry.innerHTML = `<p>${msg.message}</p><small>${new Date(msg.timestamp).toLocaleString()}</small>`;
+            entry.innerHTML = `
+                <strong>${senderData.name} (${senderData.role})</strong>
+                <p>${msg.message}</p>
+                <small>${new Date(msg.timestamp).toLocaleString()}</small>
+            `;
             container.appendChild(entry);
         }
 
-        const replyBoxContainer = document.createElement("div");
         replyBoxContainer.innerHTML = `
             <div class="reply-container">
                 <textarea class="reply-text" placeholder="Reply..."></textarea>
                 <button class="reply-btn">Reply</button>
             </div>
         `;
-        container.appendChild(replyBoxContainer);
 
         document.querySelector(".reply-btn").onclick = async () => {
             const body = document.querySelector(".reply-text").value.trim();

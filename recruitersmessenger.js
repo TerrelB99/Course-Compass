@@ -14,11 +14,11 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     composeSection.innerHTML = `
         <select id="role-select">
-          <option value="">Select Role</option>
-          <option value="Student">Student</option>
-          <option value="Recruiter">Recruiter</option>
-          <option value="Counselor">Counselor</option>
-          <option value="Admin">Admin</option>
+            <option value="">Select Role</option>
+            <option value="Student">Student</option>
+            <option value="Recruiter">Recruiter</option>
+            <option value="Counselor">Counselor</option>
+            <option value="Admin">Admin</option>
         </select>
         <select id="user-select"><option value="">Select User</option></select>
         <textarea id="new-message" placeholder="Write a message..."></textarea>
@@ -35,11 +35,13 @@ document.addEventListener("DOMContentLoaded", async function () {
         const filtered = data.filter(u => u.role === role);
         userSelect.innerHTML = `<option value="">Select ${role}</option>` +
             filtered.map(u => `<option value="${u.messageReceiverID}" data-sender="${u.messageSenderID}">
-                                ${u.firstName} ${u.lastName}</option>`).join("");
+                ${u.firstName || ""} ${u.lastName || ""}</option>`).join("");
     });
 
     document.getElementById("send-btn").addEventListener("click", async function () {
-        const receiverID = document.getElementById("user-select").value;
+        const selectedOption = document.getElementById("user-select").selectedOptions[0];
+        const receiverID = selectedOption?.value;
+        const otherSenderID = selectedOption?.getAttribute("data-sender");
         const message = document.getElementById("new-message").value.trim();
         if (!receiverID || !message) return alert("Missing fields");
 
@@ -50,8 +52,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
 
         if (res.ok) {
-            alert("Message sent.");
             document.getElementById("new-message").value = "";
+            loadThread(otherSenderID, receiverID); // 👈 Immediately open the new thread
         } else {
             alert("Error sending message");
         }
@@ -65,11 +67,18 @@ document.addEventListener("DOMContentLoaded", async function () {
         for (const sid of unique) {
             const uRes = await fetch(`/users/lookup/${sid}`);
             const uData = await uRes.json();
+
+            const name = uData.name ||
+                `${uData.firstName || ""} ${uData.lastName || ""}`.trim() ||
+                "User";
+            const role = uData.role || "Unknown";
+            const receiverId = uData.messageReceiverID;
+
             const threadEl = document.createElement("div");
-            threadEl.innerHTML = `<h3>${uData.name} (${uData.role})</h3>`;
+            threadEl.innerHTML = `<h3>${name} (${role})</h3>`;
             threadEl.classList.add("message-thread");
             threadEl.style.cursor = "pointer";
-            threadEl.addEventListener("click", () => loadThread(sid, uData.messageReceiverID));
+            threadEl.addEventListener("click", () => loadThread(sid, receiverId));
             container.appendChild(threadEl);
         }
     } catch (err) {
@@ -86,9 +95,20 @@ document.addEventListener("DOMContentLoaded", async function () {
         container.appendChild(header);
 
         for (const msg of msgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))) {
+            const senderRes = await fetch(`/users/lookup/${msg.senderId}`);
+            const senderData = await senderRes.json();
+            const name = senderData.name ||
+                `${senderData.firstName || ""} ${senderData.lastName || ""}`.trim() ||
+                "User";
+            const role = senderData.role || "Unknown";
+
             const entry = document.createElement("div");
             entry.classList.add("message-entry", msg.senderId === senderID ? "you" : "them");
-            entry.innerHTML = `<p>${msg.message}</p><small>${new Date(msg.timestamp).toLocaleString()}</small>`;
+            entry.innerHTML = `
+                <strong>${name} (${role})</strong>
+                <p>${msg.message}</p>
+                <small>${new Date(msg.timestamp).toLocaleString()}</small>
+            `;
             container.appendChild(entry);
         }
 
@@ -114,7 +134,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             });
 
             if (res.ok) {
-                loadThread(otherSenderId, otherReceiverId);
+                loadThread(otherSenderId, otherReceiverId); // refresh conversation
             } else {
                 alert("Failed to send reply");
             }

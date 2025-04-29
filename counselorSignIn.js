@@ -1,3 +1,5 @@
+// counselorSignIn.js
+
 document.addEventListener("DOMContentLoaded", () => {
     const authForm = document.getElementById("authForm");
     const errorMessage = document.getElementById("errorMessage");
@@ -22,18 +24,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (response.ok) {
                 const result = await response.json();
-                const counselor = result.counselor;
-                sessionStorage.setItem("counselor", JSON.stringify({
-                    firstName: counselor.firstName || counselor.firstname,
-                    lastName: counselor.lastName || counselor.lastname,
-                    university: counselor.university,
-                    messageSenderID: counselor.messageSenderID,
-                    messageReceiverID: counselor.messageReceiverID
-                }));
 
-                alert(`Welcome, ${counselor.firstName || counselor.firstname} ${counselor.lastName || counselor.lastname}!`);
+                // ✅ Save the full counselor object including _id
+                sessionStorage.setItem("counselor", JSON.stringify(result.counselor));
+
+                alert(`Welcome, ${result.counselor.firstName} ${result.counselor.lastName}!`);
                 window.location.href = "counselor_dashboard.html";
-
             } else {
                 const errorText = await response.json();
                 errorMessage.textContent = errorText.message || "Invalid credentials. Please try again.";
